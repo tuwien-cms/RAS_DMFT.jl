@@ -62,15 +62,14 @@ function self_energy_IFG(C::PolesSumBlock, block::Int = 1)
     B0, HA = anderson_matrix(C)
 
     # decompose scaling matrix
-    F = eigen(B0)
+    F = eigen(Hermitian(B0))
     tol = maximum(F.values) * sqrt(eps(real(T)))
-    D = similar(F.values)
-    map!(λ -> λ >= tol ? 1 / λ : zero(λ), D, F.values)
-    B0_inv = Hermitian(F.vectors' * Diagonal(D) * F.vectors) # B0^{-1}
+    D = map(λ -> λ >= tol ? 1 / λ : zero(λ), F.values)
+    B0_inv = Hermitian(F.vectors * Diagonal(D) * F.vectors') # B0^{-1}
     map!(λ -> λ >= tol ? 1 / λ^2 : zero(λ), D, F.values)
-    B0_inv_sqr = Hermitian(F.vectors' * Diagonal(D) * F.vectors) # B0^{-2}
+    B0_inv_sqr = Hermitian(F.vectors * Diagonal(D) * F.vectors') # B0^{-2}
 
-    # extract blocks.
+    # extract blocks
     A1 = Hermitian(HA[1:n, 1:n])
     A = diag(HA)[(n + 1):end]
     B = view(HA, 1:n, (n + 1):(n * N)) # column vectors b_i
@@ -90,9 +89,8 @@ function self_energy_IFG(C::PolesSumBlock, block::Int = 1)
 
     # new scaling matrix
     F = eigen(B0_inv_sqr)
-    D = Diagonal(similar(F.values))
-    map!(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), D, F.values)
-    B0 = Hermitian(F.vectors' * D * F.vectors) # B0
+    D = map(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), F.values)
+    B0 = Hermitian(F.vectors * Diagonal(D) * F.vectors') # B0
     A1 = B0 * A1 * B0
     for i in eachindex(P)
         weights(P)[i] = B0 * Hermitian(weight(P, i)) * B0
@@ -101,7 +99,7 @@ function self_energy_IFG(C::PolesSumBlock, block::Int = 1)
     # diagonalize
     H = arrowhead_matrix(P)
     H[1:(n ÷ 2), 1:(n ÷ 2)] = A1
-    F = eigen!(H)
+    F = eigen(Hermitian(H))
     locs = F.values
     B = view(F.vectors, 1:(n ÷ 2), 1:size(H, 2)) # column vectors b_i
     amp = B0 * B

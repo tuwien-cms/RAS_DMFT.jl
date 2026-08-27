@@ -61,4 +61,28 @@ using Test
         @test moment(Σ, 0) ≈ U^2 / 4 rtol = 1.0e3 * eps()
         @test moment(Σ, 1) ≈ 0 atol = 1.0e-9
     end # correlator
+
+    @testset "IFG block size four" begin
+        locsC = [-1.5, -0.5, 0.8]
+        # lower-right 2x2 blocks are dyadic and sum is exactly I
+        W1 = [1.2 0.3 0.1 0.0; 0.3 0.9 0.2 0.1; 0.1 0.2 0.25 0.125; 0.0 0.1 0.125 0.25]
+        W2 = [0.8 0.2 0.0 0.2; 0.2 1.0 0.1 0.0; 0.0 0.1 0.375 0.0; 0.2 0.0 0.0 0.375]
+        W3 = [1.4 0.1 0.2 0.3; 0.1 0.7 0.0 0.1; 0.2 0.0 0.375 -0.125; 0.3 0.1 -0.125 0.375]
+        C4 = PolesSumBlock(locsC, [W1, W2, W3])
+
+        # assert desired properties
+        m0 = moment(C4, 0)
+        @test m0[3:4, 3:4] == I # Green's function moment from anti-commutator
+        @test norm(m0[1:2, 3:4]) > 0.1 * norm(m0) # coupling must not vanish
+
+        Σ = self_energy_IFG(C4)
+        merge_degenerate_poles!(Σ, 30 * eps())
+        @test size(Σ) == (2, 2)
+        @test length(Σ) == 15
+        # zeroth moment: invert, project, invert
+        @test moment(Σ, 0) ≈ inv((inv(m0))[1:2, 1:2]) atol = 1.0e2 * eps()
+        # m1, m2 not analytically tested
+        @test moment(Σ, 1) ≈ [-1.4015 -0.47125; -0.47125 -1.120625] atol = 1.0e3 * eps()
+        @test moment(Σ, 2) ≈ [3.5254375 0.58536875; 0.58536875 2.412646875] atol = 1.0e3 * eps()
+    end # IFG block size four
 end # self-energy
