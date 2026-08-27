@@ -461,8 +461,13 @@ using Test
         @testset "size" begin
             P = PolesSumBlock(rand(10), rand(4, 10))
             @test size(P) == (4, 4)
-            @test size(P, 1) === 4
-            @test size(P, 2) === 4
+            @test size(P, 1) == 4
+            @test size(P, 2) == 4
+
+            # empty block
+            P = PolesSumBlock(Float64[], Matrix{Float64}[])
+            @test_throws ArgumentError size(P)
+            @test_throws ArgumentError size(P, 1)
         end # size
 
         @testset "sort!" begin

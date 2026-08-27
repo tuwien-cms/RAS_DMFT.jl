@@ -248,8 +248,14 @@ function Base.show(io::IO, P::PolesSumBlock)
     return nothing
 end
 
-Base.size(P::PolesSumBlock) = size(first(weights(P)))
-Base.size(P::PolesSumBlock, i) = size(first(weights(P)), i)
+function Base.size(P::PolesSumBlock)
+    isempty(P) && throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
+    return size(first(weights(P)))
+end
+function Base.size(P::PolesSumBlock, i)
+    isempty(P) && throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
+    return size(first(weights(P)), i)
+end
 
 function Base.transpose(P::PolesSumBlock{A, B}) where {A, B}
     wgts = [Matrix(transpose(w)) for w in weights(P)]
