@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `AbstractPoles`, `AbstractPolesSum`, and `AbstractPolesContinuedFraction` are now parameterized by `(A, B)` ([#232](https://github.com/frankebel/RAS_DMFT.jl/pull/232)) (ec0b81a)
+- amplitude constructor of `PolesSumBlock` accepts zero amplitudes, consistent
+  with the weight-list constructor ([#236](https://github.com/frankebel/RAS_DMFT.jl/pull/236)) (8385d55)
 
 ### Removed
 
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - correct eigenvectors and their adjoint in the self-energy from Schur complement ([#235](https://github.com/frankebel/RAS_DMFT.jl/pull/235)) (c2ea559)
+- clear `ArgumentError` from `size` on empty blocks of poles ([#236](https://github.com/frankebel/RAS_DMFT.jl/pull/236)) (105f69b)
 
 ## [0.11.0] - 2026-08-14
 
