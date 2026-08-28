@@ -104,7 +104,6 @@ function PolesSumBlock(
     Base.require_one_based_indexing(locs, amps)
     tol < 0 && throw(ArgumentError("negative tol"))
     length(locs) == size(amps, 2) || throw(DimensionMismatch("locs and amps size mismatch"))
-    isempty(locs) && throw(ArgumentError("no poles specified"))
 
     n = length(locs)
 

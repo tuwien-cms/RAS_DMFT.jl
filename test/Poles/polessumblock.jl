@@ -55,6 +55,14 @@ using Test
             @test P.locations == [0.0]
             @test P.weights == [[1 2; 2 4]]
 
+            # no pole
+            # no weights
+            P = PolesSumBlock(Int[], Matrix{Float64}[])
+            @test P isa PolesSumBlock{Int, Float64}
+            # no amplitudes
+            P = PolesSumBlock(Int[], Matrix{Float64}(undef, 0, 0))
+            @test P isa PolesSumBlock{Int, Float64}
+
             # conversion of type
             locs = [0, 1]
             wgts = [[1 2; 2 1], [3 4; 4 3]]
