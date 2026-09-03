@@ -39,7 +39,7 @@ it needs to be added
 
 ```sh
 export JULIA_PKG_USE_CLI_GIT="true"
-julia --project=path/to/project --eval 'using Pkg; Pkg.add(url="https://github.com/frankebel/RAS_DMFT.jl")'
+julia --project=path/to/project --eval 'using Pkg; Pkg.add(url="https://github.com/tuwien-cms/RAS_DMFT.jl")'
 ```
 
 If the package is installed, you can run all tests with

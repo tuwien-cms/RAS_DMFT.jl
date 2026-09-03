@@ -10,7 +10,7 @@ Changelog.generate(
     Changelog.Documenter(),
     joinpath(@__DIR__, "../CHANGELOG.md"),
     joinpath(@__DIR__, "src/changelog.md");
-    repo = "frankebel/RAS_DMFT.jl",
+    repo = "tuwien-cms/RAS_DMFT.jl",
 )
 
 # generate documentation
@@ -23,7 +23,7 @@ makedocs(;
     authors = "Frank Ebel and contributors",
     sitename = "RAS_DMFT.jl",
     format = Documenter.HTML(;
-        canonical = "https://frankebel.github.io/RAS_DMFT.jl", edit_link = "main", assets = String[]
+        canonical = "https://tuwien-cms.github.io/RAS_DMFT.jl", edit_link = "main", assets = String[]
     ),
     pages = [
         "Home" => "index.md",
@@ -33,4 +33,4 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo = "github.com/frankebel/RAS_DMFT.jl", devbranch = "main")
+deploydocs(; repo = "github.com/tuwien-cms/RAS_DMFT.jl", devbranch = "main")
