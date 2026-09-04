@@ -37,13 +37,13 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      # clone dependency "Fermions.jl" manually as it is not public yet
-      - name: clone Fermions
-        run: git clone https://user:"${AUTH_FERMIONS}"@gitlab.com/mwallerb/Fermions.jl.git
-        env:
-          AUTH_FERMIONS: ${{ secrets.AUTH_FERMIONS }}
+      # Add private Fermions.jl dependency from GitHub
       - name: add Fermions.jl
-        run: julia --project -e 'using Pkg; Pkg.develop(url="Fermions.jl")'
+        run: |
+          julia --project -e '
+            using Pkg
+            Pkg.add(url="https://x-access-token:${{ secrets.FERMIONS_PAT }}@github.com/tuwien-cms/Fermions.jl.git", rev="main")
+          '
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1

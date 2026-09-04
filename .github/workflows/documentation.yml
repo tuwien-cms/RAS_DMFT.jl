@@ -25,16 +25,17 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - name: clone Fermions
-        # Fermions.jl is still a private dependency (same as in CI.yml)
-        run: git clone https://user:"${AUTH_FERMIONS}"@gitlab.com/mwallerb/Fermions.jl.git
-        env:
-          AUTH_FERMIONS: ${{ secrets.AUTH_FERMIONS }}
+      # Add private Fermions.jl dependency from GitHub
+      - name: add Fermions.jl
+        run: |
+          julia --project -e '
+            using Pkg
+            Pkg.add(url="https://x-access-token:${{ secrets.FERMIONS_PAT }}@github.com/tuwien-cms/Fermions.jl.git", rev="main")
+          '
       - name: Install dependencies
         shell: julia --color=yes --project=docs {0}
         run: |
           using Pkg
-          Pkg.develop(url = "Fermions.jl")
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - name: Build and deploy
