@@ -87,25 +87,20 @@ function quasiparticle_weight_inflections(
 
     TΣ = float(eltype(Σ))
 
-    # residual = 0 are the inflection points
-    @inline function residual(λ)
-        M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
-        return (1 + M1) * M2 + 4λ^2 * M2^2 - 4λ^2 * (1 + M1) * M3
-    end
-
     λs = logrange(λmin, λmax; length = 10_000) # enough points per decade
 
     roots = TΣ[]
     λ_low = λs[1]
-    G_low = residual(λ_low)
+    G_low = _inflection_residual(Σ, tol, λ_low)
     @inbounds for λ_high in λs[2:end]
-        G_high = residual(λ_high)
+        G_high = _inflection_residual(Σ, tol, λ_high)
         if sign(G_low) != sign(G_high)
+
             # bisect for higher accuracy
             for _ in 1:100
                 λ_mid = (λ_low + λ_high) / 2
                 (λ_mid == λ_low || λ_mid == λ_high) && break
-                if sign(residual(λ_mid)) == sign(G_low)
+                if sign(_inflection_residual(Σ, tol, λ_mid)) == sign(G_low)
                     λ_low = λ_mid
                 else
                     λ_high = λ_mid
@@ -116,6 +111,12 @@ function quasiparticle_weight_inflections(
         G_low, λ_low = G_high, λ_high
     end
     return roots
+end
+
+# residual = 0 are the inflection points of Z(λ)
+@inline function _inflection_residual(Σ::PolesSum, tol, λ)
+    M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
+    return (1 + M1) * M2 + 4λ^2 * M2^2 - 4λ^2 * (1 + M1) * M3
 end
 
 # regularized pole moments skipping weights below tol
