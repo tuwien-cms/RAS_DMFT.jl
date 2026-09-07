@@ -63,11 +63,13 @@ M_3 &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{(a_i^2 + λ^2)^3}.
 
 # Examples
 ```jldoctest
-julia> Σ = PolesSum([1.0], [2.0]);
+julia> Σ = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]);
 
 julia> quasiparticle_weight_inflections(Σ; λmax = 2.0)
-1-element Vector{Float64}:
- 0.9999999999999998
+3-element Vector{Float64}:
+ 0.00012018504652954801
+ 0.019681873959735308
+ 0.9999998333332845
 ```
 
 See also [`quasiparticle_weight`](@ref).
@@ -111,6 +113,50 @@ function quasiparticle_weight_inflections(
         G_low, λ_low = G_high, λ_high
     end
     return roots
+end
+
+"""
+    quasiparticle_weight_optimum_regularization(
+        Σ::PolesSum;
+        tol::Real = 0,
+        λmin::Real = eps(),
+        λmax::Real = 1,
+    )
+
+Return the regularization parameter ``λ`` at which the regularized
+quasiparticle weight [`quasiparticle_weight`](@ref) is most shallow.
+
+This is found by taking the inflection points of `Z(λ)` in
+``[λ_\\mathrm{min}, λ_\\mathrm{max}]``
+and taking the value with the smallest slope ``∂Z(λ)/∂λ``.
+Returns zero if no inflection point is found.
+
+# Examples
+```jldoctest
+julia> Σ = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]);
+
+julia> quasiparticle_weight_optimum_regularization(Σ; λmax = 2.0)
+0.019681873959735308
+```
+"""
+function quasiparticle_weight_optimum_regularization(
+        Σ::PolesSum;
+        tol::Real = 0,
+        λmin::Real = eps(),
+        λmax::Real = 1,
+    )
+    λ_infl = quasiparticle_weight_inflections(Σ; tol, λmin, λmax)
+    isempty(λ_infl) && return zero(float(eltype(Σ)))
+    slopes = map(λ -> _quasiparticle_weight_slope(Σ, tol, λ), λ_infl)
+    i_min = argmin(slopes)
+    return λ_infl[i_min]
+end
+
+# ∂Z(λ)/∂λ
+function _quasiparticle_weight_slope(Σ::PolesSum, tol, λ)
+    M1, M2, _ = _regularized_pole_moments(Σ, tol, λ)
+    Z = inv(1 + M1)
+    return 2λ * Z^2 * M2
 end
 
 # residual = 0 are the inflection points of Z(λ)

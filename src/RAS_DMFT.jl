@@ -71,6 +71,7 @@ export
     orgtr!,
     quasiparticle_weight,
     quasiparticle_weight_inflections,
+    quasiparticle_weight_optimum_regularization,
     read_hdf5,
     remove_zero_weight,
     remove_zero_weight!,

@@ -37,4 +37,14 @@ using Test
         λ3 = quasiparticle_weight_inflections(Σ3; λmax = 2.0)
         @test λ3 ≈ [1.2018504652954801e-4, 1.9681873959735308e-2, 0.9999998333332845] atol = 10 * eps()
     end # quasiparticle_weight_inflections
+
+    @testset "quasiparticle_weight_optimum_regularization" begin
+        Σ = PolesSum([1.0], [2.0])
+        @inferred quasiparticle_weight_optimum_regularization(Σ; λmax = 2.0)
+        @inferred quasiparticle_weight_optimum_regularization(Σ; λmax = 0.5) # no inflection
+        @test quasiparticle_weight_optimum_regularization(Σ; λmax = 2.0) ≈ 1.0 atol = 2 * eps()
+        @test quasiparticle_weight_optimum_regularization(Σ; λmax = 0.5) == 0
+        Σ3 = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]) # three inflections
+        @test quasiparticle_weight_optimum_regularization(Σ3; λmax = 2.0) ≈ 1.9681873959735308e-2 atol = 10 * eps()
+    end # quasiparticle_weight_optimum_regularization
 end # quasiparticle weight
