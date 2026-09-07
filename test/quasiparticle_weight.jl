@@ -4,6 +4,8 @@ using Test
 @testset "quasiparticle weight" begin
     @testset "quasiparticle_weight" begin
         Σ = PolesSum([-0.25, -0.01, 0.5], [1.0, 2.0, 3.0])
+        @inferred quasiparticle_weight(Σ)
+        @inferred quasiparticle_weight(Σ; λ = 1.0e-2, tol = 1.0)
         @test quasiparticle_weight(Σ) == inv(20029)
         @test quasiparticle_weight(Σ; tol = 1.0) == inv(20029)
         @test quasiparticle_weight(Σ; tol = 1.1) == inv(20013)
@@ -14,6 +16,9 @@ using Test
     @testset "quasiparticle_weight_inflections" begin
         # single pole with optimum λ = 1
         Σ = PolesSum([1.0], [2.0])
+        @inferred quasiparticle_weight_inflections(Σ; λmax = 2.0)
+        Σi = PolesSum([1, 2], [3, 4])
+        @inferred quasiparticle_weight_inflections(Σi; λmin = 1, λmax = 2) # Vector{Float64}
         @test quasiparticle_weight_inflections(Σ; λmax = 2.0) ≈ [1.0] atol = 2 * eps()
         # outside the search window
         @test isempty(quasiparticle_weight_inflections(Σ; λmax = 0.5))
