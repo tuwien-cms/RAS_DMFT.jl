@@ -48,16 +48,16 @@ The inflection points are the solution of ``∂^2Z(λ)/∂λ^2 = 0``,
 which are the roots of
 
 ```math
-(1+S) T + 4 λ^2 T^2 = 4 λ^2 (1+S) U,
+(1+M_1) M_2 + 4 λ^2 M_2^2 = 4 λ^2 (1+M_1) M_3,
 ```
 
-with the sums
+with the regularized pole moments
 
 ```math
 \\begin{aligned}
-S &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{a_i^2 + λ^2}, \\\\
-T &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{(a_i^2 + λ^2)^2}, \\\\
-U &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{(a_i^2 + λ^2)^3}.
+M_1 &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{a_i^2 + λ^2}, \\\\
+M_2 &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{(a_i^2 + λ^2)^2}, \\\\
+M_3 &= \\sum_{w_i \\geq \\mathrm{tol}} \\frac{w_i}{(a_i^2 + λ^2)^3}.
 \\end{aligned}
 ```
 
@@ -87,22 +87,10 @@ function quasiparticle_weight_inflections(
 
     TΣ = float(eltype(Σ))
 
-    @inline function derivative_sums(λ)
-        S, T, U = zero(TΣ), zero(TΣ), zero(TΣ)
-        for (loc, wgt) in Σ
-            wgt < tol && continue
-            invden = inv(loc^2 + λ^2)
-            S += wgt * invden
-            T += wgt * invden^2
-            U += wgt * invden^3
-        end
-        return S, T, U
-    end
-
     # residual = 0 are the inflection points
     @inline function residual(λ)
-        S, T, U = derivative_sums(λ)
-        return (1 + S) * T + 4λ^2 * T^2 - 4λ^2 * (1 + S) * U
+        M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
+        return (1 + M1) * M2 + 4λ^2 * M2^2 - 4λ^2 * (1 + M1) * M3
     end
 
     λs = logrange(λmin, λmax; length = 10_000) # enough points per decade
@@ -128,4 +116,17 @@ function quasiparticle_weight_inflections(
         G_low, λ_low = G_high, λ_high
     end
     return roots
+end
+
+# regularized pole moments skipping weights below tol
+@inline function _regularized_pole_moments(Σ::PolesSum, tol, λ)
+    M1 = M2 = M3 = zero(float(eltype(Σ)))
+    for (loc, wgt) in Σ
+        wgt < tol && continue
+        invden = inv(loc^2 + λ^2)
+        M1 += wgt * invden
+        M2 += wgt * invden^2
+        M3 += wgt * invden^3
+    end
+    return M1, M2, M3
 end
