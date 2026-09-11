@@ -47,4 +47,20 @@ using Test
         Σ3 = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]) # three inflections
         @test quasiparticle_weight_optimum_regularization(Σ3; λmax = 2.0) ≈ 1.9681873959735308e-2 atol = 10 * eps()
     end # quasiparticle_weight_optimum_regularization
+
+    @testset "_quasiparticle_weight_log_slope" begin
+        # log-inflection root at λ^2 = ϵ^2 + w = 3
+        Σ = PolesSum([1.0], [2.0])
+        @test RAS_DMFT._quasiparticle_weight_log_slope(Σ, 0, sqrt(3) - 10 * eps()) > 0
+        @test RAS_DMFT._quasiparticle_weight_log_slope(Σ, 0, sqrt(3)) ≈ 1 / 3 atol = 10 * eps()
+        @test RAS_DMFT._quasiparticle_weight_log_slope(Σ, 0, sqrt(3) + 10 * eps()) > 0
+    end # _quasiparticle_weight_log_slope
+
+    @testset "_quasiparticle_weight_log_curvature" begin
+        # log-inflection root at λ^2 = ϵ^2 + w = 3
+        Σ = PolesSum([1.0], [2.0])
+        @test RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, sqrt(3) - 10 * eps()) > 0
+        @test RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, sqrt(3)) ≈ 0 atol = 10 * eps()
+        @test RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, sqrt(3) + 10 * eps()) < 0
+    end # _quasiparticle_weight_log_curvature
 end # quasiparticle weight

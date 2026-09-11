@@ -165,6 +165,20 @@ end
     return (1 + M1) * M2 + 4λ^2 * M2^2 - 4λ^2 * (1 + M1) * M3
 end
 
+# slope (∂ Z)/(∂ logλ)
+function _quasiparticle_weight_log_slope(Σ::PolesSum, tol, λ)
+    M1, M2, _ = _regularized_pole_moments(Σ, tol, λ)
+    Z = inv(1 + M1)
+    return 2 * λ^2 * Z^2 * M2
+end
+
+# proportional to curvature (∂^2 Z)/(∂(logλ)^2)
+# common factor 4 λ^2 Z^2 canceled as only the sign is relevant
+@inline function _quasiparticle_weight_log_curvature(Σ::PolesSum, tol, λ)
+    M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
+    return (1 + M1) * M2 + 2 * λ^2 * M2^2 - 2 * λ^2 * (1 + M1) * M3
+end
+
 # regularized pole moments skipping weights below tol
 @inline function _regularized_pole_moments(Σ::PolesSum, tol, λ)
     M1 = M2 = M3 = zero(float(eltype(Σ)))
