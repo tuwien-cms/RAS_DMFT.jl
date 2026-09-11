@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `quasiparticle_weight_inflections` to calculate inflection of $Z(\lambda)$ ([#222](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/222)) (3c473bc)
 - `quasiparticle_weight_optimum_regularization` to find the regularization
-  parameter `λ` with the smallest slope of $Z(\lambda)$
-  ([#239](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/239)) (ac40c60)
+  parameter `λ` at the first plateau of $Z(\lambda)$ on a logarithmic axis,
+  with a prominence filter to discard shallow wiggles
+  ([#240](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/240)) (05c4c0d)
 
 ### Changed
 
