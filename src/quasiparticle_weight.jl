@@ -113,35 +113,66 @@ end
         tol::Real = 0,
         λmin::Real = eps(),
         λmax::Real = 1,
+        prominence::Real = 10,
     )
 
-Return the regularization parameter ``λ`` at which the regularized
-quasiparticle weight [`quasiparticle_weight`](@ref) is most shallow.
+Return the regularization parameter ``λ`` of the first plateau of
+[`quasiparticle_weight`](@ref) in ``[λ_\\mathrm{min}, λ_\\mathrm{max}]``.
 
-This is found by taking the inflection points of `Z(λ)` in
-``[λ_\\mathrm{min}, λ_\\mathrm{max}]``
-and taking the value with the smallest slope ``∂Z(λ)/∂λ``.
-Returns zero if no inflection point is found.
+A plateau is a minimum of the slope on a logarithmic ``λ`` axis: ``∂^2Z/∂(\\ln λ)^2 = 0``.
+It only counts if the rise separating it from the plateau at ``λ → 0`` is
+at least `prominence` times steeper than the plateau itself, which discards wiggles.
+Return zero if there is no such plateau, as ``Z(0)`` is then optimal.
 
 # Examples
 ```jldoctest
-julia> Σ = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]);
+julia> Σ = PolesSum([1.0e-4, 1.0], [1.0e-7, 2.0]); # tiny pole close to zero
 
-julia> quasiparticle_weight_optimum_regularization(Σ; λmax = 2.0)
-0.019681873959735308
+julia> quasiparticle_weight_optimum_regularization(Σ)
+0.014951703474155864
+
+julia> quasiparticle_weight_optimum_regularization(PolesSum([1.0], [2.0]))
+0.0
 ```
+
+See also [`quasiparticle_weight`](@ref).
 """
 function quasiparticle_weight_optimum_regularization(
         Σ::PolesSum;
         tol::Real = 0,
         λmin::Real = eps(),
         λmax::Real = 1,
+        prominence::Real = 10,
     )
-    λ_infl = quasiparticle_weight_inflections(Σ; tol, λmin, λmax)
-    isempty(λ_infl) && return zero(float(eltype(Σ)))
-    slopes = map(λ -> _quasiparticle_weight_slope(Σ, tol, λ), λ_infl)
-    i_min = argmin(slopes)
-    return λ_infl[i_min]
+
+    # check input
+    tol >= 0 || throw(ArgumentError("tol must be semipositive"))
+    λmax > 0 || throw(ArgumentError("λmax must be positive"))
+    λmin > 0 || throw(ArgumentError("λmin must be positive"))
+    λmin < λmax || throw(ArgumentError("violating λmin < λmax"))
+    prominence >= 1 || throw(ArgumentError("prominence must be at least one"))
+
+    TΣ = float(eltype(Σ))
+    λs = logrange(λmin, λmax; length = 10_000) # enough points per decade
+
+    # steepest rise so far, the reference for the prominence of a plateau
+    slope_max = _quasiparticle_weight_log_slope(Σ, tol, λmin)
+    λ_low = λmin
+    residual_low = _quasiparticle_weight_log_curvature(Σ, tol, λ_low)
+    @inbounds for λ_high in λs[2:end]
+        residual_high = _quasiparticle_weight_log_curvature(Σ, tol, λ_high)
+        # a minimum of the logarithmic slope turns the residual from - to +
+        if residual_low < 0 <= residual_high
+            λ_plateau = _bisect_sign_change(
+                λ -> _quasiparticle_weight_log_curvature(Σ, tol, λ), λ_low, λ_high
+            )
+            slope_plateau = _quasiparticle_weight_log_slope(Σ, tol, λ_plateau)
+            slope_max / slope_plateau >= prominence && return λ_plateau
+        end
+        slope_max = max(slope_max, _quasiparticle_weight_log_slope(Σ, tol, λ_high))
+        residual_low, λ_low = residual_high, λ_high
+    end
+    return zero(TΣ)
 end
 
 # ∂Z(λ)/∂λ
