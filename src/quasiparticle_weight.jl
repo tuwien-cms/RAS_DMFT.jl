@@ -175,13 +175,6 @@ function quasiparticle_weight_optimum_regularization(
     return zero(TΣ)
 end
 
-# ∂Z(λ)/∂λ
-function _quasiparticle_weight_slope(Σ::PolesSum, tol, λ)
-    M1, M2, _ = _regularized_pole_moments(Σ, tol, λ)
-    Z = inv(1 + M1)
-    return 2λ * Z^2 * M2
-end
-
 # residual = 0 are the inflection points of Z(λ)
 @inline function _inflection_residual(Σ::PolesSum, tol, λ)
     M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
