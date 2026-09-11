@@ -97,18 +97,10 @@ function quasiparticle_weight_inflections(
     @inbounds for λ_high in λs[2:end]
         G_high = _inflection_residual(Σ, tol, λ_high)
         if sign(G_low) != sign(G_high)
-
-            # bisect for higher accuracy
-            for _ in 1:100
-                λ_mid = (λ_low + λ_high) / 2
-                (λ_mid == λ_low || λ_mid == λ_high) && break
-                if sign(_inflection_residual(Σ, tol, λ_mid)) == sign(G_low)
-                    λ_low = λ_mid
-                else
-                    λ_high = λ_mid
-                end
-            end
-            push!(roots, (λ_low + λ_high) / 2)
+            push!(
+                roots,
+                _bisect_sign_change(λ -> _inflection_residual(Σ, tol, λ), λ_low, λ_high)
+            )
         end
         G_low, λ_low = G_high, λ_high
     end
@@ -177,6 +169,21 @@ end
 @inline function _quasiparticle_weight_log_curvature(Σ::PolesSum, tol, λ)
     M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
     return (1 + M1) * M2 + 2 * λ^2 * M2^2 - 2 * λ^2 * (1 + M1) * M3
+end
+
+# bisect the sign change of `residual` bracketed by [λ_low, λ_high]
+function _bisect_sign_change(residual, λ_low, λ_high)
+    sign_low = sign(residual(λ_low))
+    for _ in 1:60  # enough for Float64 machine precision (53 bits)
+        λ_mid = (λ_low + λ_high) * 0.5
+        (λ_mid == λ_low || λ_mid == λ_high) && break
+        if sign(residual(λ_mid)) == sign_low
+            λ_low = λ_mid
+        else
+            λ_high = λ_mid
+        end
+    end
+    return (λ_low + λ_high) * 0.5
 end
 
 # regularized pole moments skipping weights below tol

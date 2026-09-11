@@ -63,4 +63,12 @@ using Test
         @test RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, sqrt(3)) ≈ 0 atol = 10 * eps()
         @test RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, sqrt(3) + 10 * eps()) < 0
     end # _quasiparticle_weight_log_curvature
+
+    @testset "_bisect_sign_change" begin
+        # log-inflection root at λ^2 = ϵ^2 + w = 3
+        Σ = PolesSum([1.0], [2.0])
+        residual = λ -> RAS_DMFT._quasiparticle_weight_log_curvature(Σ, 0, λ)
+        λ_root = RAS_DMFT._bisect_sign_change(residual, 1.0, 2.0)
+        @test λ_root ≈ sqrt(3.0) atol = 10 * eps()
+    end # _bisect_sign_change
 end # quasiparticle weight
