@@ -13,20 +13,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parameter `λ` at the first plateau of $Z(\lambda)$ on a logarithmic axis,
   with a prominence filter to discard shallow wiggles
   ([#240](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/240)) (05c4c0d)
+- `NaturalImpurityOrbital` describing the natural impurity orbital basis
+  by its impurity-mirror block and its valence and conduction chains,
+  together with the accessors `n_valence` and `n_conduction`
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
 
 ### Changed
 
 - `AbstractPoles`, `AbstractPolesSum`, and `AbstractPolesContinuedFraction` are now parameterized by `(A, B)` ([#232](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/232)) (ec0b81a)
 - amplitude constructor of `PolesSumBlock` accepts zero amplitudes, consistent
   with the weight-list constructor ([#236](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/236)) (8385d55)
+- rename to natural impurity orbitals
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (591fbf3)
+  - `to_natural_orbitals` → `natural_impurity_orbital`
+  - `natural_orbital_operator` → `natural_impurity_orbital_operator`
+  - `natural_orbital_ras_operator` → `natural_impurity_orbital_ras_operator`
+- `natural_impurity_orbital` takes the hybridization function `Δ::PolesSum`
+  instead of an arrowhead matrix,
+  and returns a `NaturalImpurityOrbital` instead of `(H_nat, n_occ)`.
+  Both operator builders drop their `n_occ` argument accordingly
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
+- chain hoppings are positive, fixing the gauge LAPACK leaves free
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
+- `natural_impurity_orbital` and `init_system` take the mean-field impurity level `ϵ_mf`
+  that defines the reference basis,
+  next to the bare level `ϵ_imp` entering the Hamiltonian
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (0fbc17c)
+- `natural_impurity_orbital` requires every pole of `Δ` to carry weight
+  and throws an `ArgumentError` otherwise.
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (675e34f)
 
 ### Removed
 
 - `discretize_similar_weight`, `discretize_to_grid` ([#225](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/225)) (b010ad3)
 - submodule `Debug` from the public API ([#228](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/228)) (8c953db)
+- custom LAPACK wrappers `sytrd!` and `orgtr!`
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (27f4c30)
+- `get_RAS_parameters` as parameters can be inferred directly
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (79cec2a)
 
 ### Fixed
 
+- loss of particle-hole symmetry in `natural_impurity_orbital`
+  for a symmetric bath with an odd number of sites,
+  where the level at the Fermi energy used to be assigned to the conduction chain as a whole.
+  Its weight is now shared evenly between both chains
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
+- `natural_impurity_orbital` throws on an empty valence or conduction sector
+  instead of fabricating a site
+  ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
 - correct eigenvectors and their adjoint in the self-energy from Schur complement ([#235](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/235)) (c2ea559)
 - clear `ArgumentError` from `size` on empty blocks of poles ([#236](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/236)) (105f69b)
 
