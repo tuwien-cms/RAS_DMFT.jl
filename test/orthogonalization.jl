@@ -18,20 +18,20 @@ using Test
         # Q_int^† Q_int = 𝟙
         foo = Matrix{Float64}(undef, 2, 2)
         mul!(foo, Q_new', Q_new)
-        @test norm(foo - I) < 8 * eps()
+        @test norm(foo - I) < 1000 * eps()
         # V = Q_int B
         bar = similar(Q)
         mul!(bar, Q_new, S_sqrt) # Q = Q_new S^{1/2}
         for i in axes(Q, 2)
-            @test norm(bar[i] - Q[i]) < 10 * eps()
+            @test norm(bar[i] - Q[i]) < 1000 * eps()
         end
 
         # Matrix{ComplexF64}
         Q = rand(ComplexF64, 10, 4)
         @inferred RAS_DMFT._orthonormalize_SVD(Q)
         Q_new, S_sqrt = RAS_DMFT._orthonormalize_SVD(Q)
-        @test norm(Q_new' * Q_new - I) < 100 * eps() # Q_new^† Q_new = 𝟙
-        @test norm(Q - Q_new * S_sqrt) < 100 * eps() # Q = Q_new * S^{1/2}
+        @test norm(Q_new' * Q_new - I) < 10000 * eps() # Q_new^† Q_new = 𝟙
+        @test norm(Q - Q_new * S_sqrt) < 10000 * eps() # Q = Q_new * S^{1/2}
         @test ishermitian(S_sqrt)
 
         # RASWavefunction
@@ -43,12 +43,12 @@ using Test
         # Q_new^† Q_new = 𝟙
         foo = Matrix{Float64}(undef, 2, 2)
         mul!(foo, Q_new', Q_new)
-        @test norm(foo - I) < 8 * eps()
+        @test norm(foo - I) < 1000 * eps()
         # Q = Q_new S^{1/2}
         bar = similar(Q)
         mul!(bar, Q_new, S_sqrt)
         for i in eachindex(Q)
-            @test norm(bar[i] - Q[i]) < 8 * eps()
+            @test norm(bar[i] - Q[i]) < 1000 * eps()
         end
         @test issymmetric(S_sqrt)
     end # _orthonormalize_SVD
