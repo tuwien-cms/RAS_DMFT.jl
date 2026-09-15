@@ -42,7 +42,6 @@ export
     find_chemical_potential,
     flip_spectrum,
     flip_spectrum!,
-    get_RAS_parameters,
     greens_function_bethe_analytic,
     greens_function_bethe_equal_weight,
     greens_function_bethe_grid,

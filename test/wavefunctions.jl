@@ -56,15 +56,15 @@ using Test
 
         Δ = hybridization_function_bethe_simple(n_bath)
         H_nat = natural_impurity_orbital(Δ, 0)
-        n_sites = size(H_nat, 1)
-        n_bit, V_v, V_c = get_RAS_parameters(n_sites, n_valence(H_nat), L_c, L_v)
 
         # RASWavefunction
-        fs = FockSpace(Orbitals(n_bit), FermionicSpin(1 // 2))
+        fs = FockSpace(Orbitals(2 + L_v + L_c), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
         H = natural_impurity_orbital_ras_operator(H_nat, H_int, -μ, fs, L_v, L_c, p)
-        ψ_start = RASWavefunction_singlet(Dict{UInt64, Float64}, L_v, L_c, V_v, V_c, p)
+        ψ_start = RASWavefunction_singlet(
+            Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
+        )
 
         # 10 steps total
         E0, ψ0 = ground_state!(H, ψ_start, n_kryl, 10, 0)
@@ -88,7 +88,7 @@ using Test
         @test var < eps()
 
         # calculate full variance in Wavefunction without L,p approximation
-        fs = FockSpace(Orbitals(n_sites), FermionicSpin(1 // 2))
+        fs = FockSpace(Orbitals(size(H_nat, 1)), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
         H_wf = natural_impurity_orbital_operator(H_nat, H_int, -μ, fs, L_v, L_c)

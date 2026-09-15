@@ -13,19 +13,6 @@ function _with_blas_threads(f, t::Int = 1)
 end
 
 """
-    get_RAS_parameters(n_sites::Int, n_v::Int, n_v_bit::Int, n_c_bit::Int)
-
-Return `n_bit`, `n_v_vector`, `n_c_vector`.
-"""
-function get_RAS_parameters(n_sites::Int, n_v::Int, n_v_bit::Int, n_c_bit::Int)
-    n_bit = 2 + n_v_bit + n_c_bit
-    n_c = n_sites - n_v - 2
-    n_v_vector = n_v - n_v_bit
-    n_c_vector = n_c - n_c_bit
-    return n_bit, n_v_vector, n_c_vector
-end
-
-"""
     init_system(
         Δ::PolesSum,
         H_int::Operator,
@@ -53,10 +40,11 @@ function init_system(
         var::Real,
     )
     H_nat = natural_impurity_orbital(Δ, ϵ_mf)
-    n_bit, V_v, V_c = get_RAS_parameters(size(H_nat, 1), n_valence(H_nat), L_c, L_v)
-    fs = FockSpace(Orbitals(n_bit), FermionicSpin(1 // 2))
+    fs = FockSpace(Orbitals(2 + L_v + L_c), FermionicSpin(1 // 2))
     H = natural_impurity_orbital_ras_operator(H_nat, H_int, ϵ_imp, fs, L_v, L_c, p)
-    ψ_start = RASWavefunction_singlet(Dict{UInt64, Float64}, L_v, L_c, V_v, V_c, p)
+    ψ_start = RASWavefunction_singlet(
+        Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
+    )
     E0, ψ0 = ground_state!(H, ψ_start, 5, typemax(Int), var)
     return H, E0, ψ0
 end
