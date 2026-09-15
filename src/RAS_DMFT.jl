@@ -8,12 +8,14 @@ using Fermions.Wavefunctions
 using HDF5
 using LinearAlgebra
 using SpecialFunctions
+using StaticArrays: @SMatrix, SDiagonal, SMatrix
 
 # Types
 export
     AbstractPoles,
     AbstractPolesContinuedFraction,
     AbstractPolesSum,
+    NaturalImpurityOrbital,
     PolesContinuedFraction,
     PolesContinuedFractionBlock,
     PolesSum,
@@ -66,6 +68,8 @@ export
     merge_small_weight!,
     moment,
     moments,
+    n_conduction,
+    n_valence,
     natural_impurity_orbital,
     natural_impurity_orbital_operator,
     natural_impurity_orbital_ras_operator,

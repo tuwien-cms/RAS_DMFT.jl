@@ -1,181 +1,294 @@
 """
-    natural_impurity_orbital(H::AbstractMatrix, ϵ::Real=1e-8)
+    NaturalImpurityOrbital{T<:Real}
 
-Transforms a single particle Hamiltonian `H` to natural impurity orbital basis.
+Natural impurity orbital representation of a single-particle Hamiltonian.
 
-`H[1,1]` is the onsite energy of the impurity.
-States with energies `E ∈ (-ϵ, ϵ)` are considered degenerate.
+The ordering is `[i, b, v_1, ..., v_(n_v), c_1, ..., c_(n_c)]`,
+where `i` is the impurity,
+`b` its mirror,
+`v_1...v_(n_v)` the fully occupied valence chain,
+and `c_1...c_(n_c)` the empty conduction chain.
+
+# Fields
+- `H_ib`: 2×2 impurity-mirror Hamiltonian block
+- `i_v`: Impurity ↔ valence coupling (i↔v₁)
+- `i_c`: Impurity ↔ conduction coupling (i↔c₁)
+- `b_v`: Mirror ↔ valence coupling (b↔v₁)
+- `b_c`: Mirror ↔ conduction coupling (b↔c₁)
+- `e_v`: Valence on-site energies
+- `t_v`: Valence hoppings (v₁↔v₂↔...)
+- `e_c`: Conduction on-site energies
+- `t_c`: Conduction hoppings (c₁↔c₂↔...)
+
+# See also
+`natural_impurity_orbital` to construct.
 """
-function natural_impurity_orbital(H::AbstractMatrix{<:Real}, ϵ::Real = 1.0e-8)
-    ishermitian(H) || throw(ArgumentError("`H` not Hermitian"))
-    E, T = LAPACK.syev!('V', 'U', copy(H))
-    n_lower = count(<=(-ϵ), E)
-    n_zero = count(x -> abs(x) < ϵ, E)
-    isodd(n_zero) && @warn "odd number of energies equal zero"
-    n_occ = n_lower + (n_zero ÷ 2) # half of states around zero occupied
-    if n_zero > 1
-        # symmetrize degenerate states around zero
-        @info "degenerate zero-energy"
-        p = T'[n_occ:(n_occ + 1), 1]
-        p ./= norm(p)
-        R = inv([p[1] p[2]; p[2] -p[1]]) * [1 / sqrt(2), 1 / sqrt(2)]
-        t1 = R[1] * T[:, n_occ] + R[2] * T[:, n_occ + 1]
-        t2 = R[1] * T[:, n_occ + 1] - R[2] * T[:, n_occ]
-        T[:, n_occ] .= t1[:]
-        T[:, n_occ + 1] .= t2[:]
+struct NaturalImpurityOrbital{T <: Real}
+    H_ib::SMatrix{2, 2, T, 4}
+    i_v::T
+    i_c::T
+    b_v::T
+    b_c::T
+    e_v::Vector{T}
+    t_v::Vector{T}
+    e_c::Vector{T}
+    t_c::Vector{T}
+
+    function NaturalImpurityOrbital{T}(
+            H_ib,
+            i_v,
+            i_c,
+            b_v,
+            b_c,
+            e_v,
+            t_v,
+            e_c,
+            t_c
+        ) where {T}
+        issymmetric(H_ib) || throw(ArgumentError("H_ib is not symmetric"))
+        all(<(0), e_v)::Bool || throw(ArgumentError("positive valence energies"))
+        length(t_v) == max(length(e_v) - 1, 0) ||
+            throw(ArgumentError("length mismatch in valence sites and hopping"))
+        all(>(0), e_c)::Bool || throw(ArgumentError("negative conduction energies"))
+        length(t_c) == max(length(e_c) - 1, 0) ||
+            throw(ArgumentError("length mismatch in conduction sites and hopping"))
+        return new{T}(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
+    end
+end
+
+function NaturalImpurityOrbital(
+        H_ib::SMatrix{2, 2, T},
+        i_v::T,
+        i_c::T,
+        b_v::T,
+        b_c::T,
+        e_v::Vector{T},
+        t_v::Vector{T},
+        e_c::Vector{T},
+        t_c::Vector{T},
+    ) where {T <: Real}
+    return NaturalImpurityOrbital{T}(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
+end
+
+n_conduction(H_nat::NaturalImpurityOrbital) = length(H_nat.e_c)
+
+n_valence(H_nat::NaturalImpurityOrbital) = length(H_nat.e_v)
+
+Base.eltype(::Type{NaturalImpurityOrbital{T}}) where {T} = T
+
+# Reconstruct the full n×n Hamiltonian matrix (for tests, debugging).
+function Base.Matrix(H_nat::NaturalImpurityOrbital{T}) where {T}
+    n_v = n_valence(H_nat)
+    n_c = n_conduction(H_nat)
+    M = zeros(T, size(H_nat))
+
+    # Impurity-mirror block
+    M[1:2, 1:2] = H_nat.H_ib
+
+    # Valence chain couplings (i,b ↔ v₁)
+    if n_v >= 1
+        M[1, 3] = M[3, 1] = H_nat.i_v
+        M[2, 3] = M[3, 2] = H_nat.b_v
     end
 
-    base_occ = T[:, 1:n_occ] # valence states
-    base_emp = T[:, (n_occ + 1):end] # conduction states
-
-    P = base_occ * base_occ' # projector on valence
-    Q = I - P # projector on conduction
-    w = P[:, 1] # impurity projected on valence
-    α = norm(w)
-    w ./= α
-    u = Q[:, 1] # impurity projected on conduction
-    β = norm(u)
-    u ./= β
-
-    # orthogonalize the remaining valence wrt impurity
-    for v in eachcol(base_occ)
-        v .-= dot(v, w) .* w
-    end
-    # orthogonalize the remaining conduction wrt impurity
-    for v in eachcol(base_emp)
-        v .-= dot(v, u) .* u
+    # Conduction chain couplings (i,b ↔ c₁)
+    if n_c >= 1
+        j = 3 + n_v
+        M[1, j] = M[j, 1] = H_nat.i_c
+        M[2, j] = M[j, 2] = H_nat.b_c
     end
 
-    # Löwdin on valence states
-    base_occ[:, 1] .= w
-    _lowdin!(base_occ)
-    h = base_occ' * H * base_occ
+    # Valence chain (tridiagonal)
+    for i in 1:n_v
+        M[2 + i, 2 + i] = H_nat.e_v[i]
+    end
+    for i in 1:(n_v - 1)
+        M[2 + i, 3 + i] = M[3 + i, 2 + i] = H_nat.t_v[i]
+    end
 
-    _, _, a_occ, b_occ = LAPACK.hetrd!('L', h)
+    # Conduction chain (tridiagonal)
+    for i in 1:n_c
+        M[2 + n_v + i, 2 + n_v + i] = H_nat.e_c[i]
+    end
+    for i in 1:(n_c - 1)
+        M[2 + n_v + i, 3 + n_v + i] =
+            M[3 + n_v + i, 2 + n_v + i] = H_nat.t_c[i]
+    end
 
-    # Löwdin on conduction states
-    base_emp[:, 1] .= u
-    _lowdin!(base_emp)
-    h = base_emp' * H * base_emp
+    return M
+end
 
-    _, _, a_emp, b_emp = LAPACK.hetrd!('L', h)
+Base.show(io::IO, H_nat::NaturalImpurityOrbital) =
+    print(io, join(size(H_nat), '×'), " ", typeof(H_nat))
+function Base.show(io::IO, ::MIME"text/plain", H_nat::NaturalImpurityOrbital)
+    println(io, join(size(H_nat), '×'), " ", typeof(H_nat), ":")
+    Base.print_matrix(io, Matrix(H_nat))
+    return nothing
+end
 
-    push!(b_occ, 0.0)
-    a = vcat(a_occ, a_emp)
-    b = vcat(b_occ, b_emp)
-    H_tri = SymTridiagonal(a, b)
-    n = length(a)
-    v1 = zeros(n)
-    v1[1] = α
-    v1[n_occ + 1] = β
-    v2 = zeros(n)
-    v2[1] = β
-    v2[n_occ + 1] = -α
-    T = Matrix{Float64}(I, n, n)
-    T[:, 1] = v1
-    T[:, n_occ + 1] = v2
-    H_trafo = T' * H_tri * T
-    H_trafo = 0.5 * (H_trafo' + H_trafo) # take the Hermitian part
-    return H_trafo, n_occ
+function Base.size(H_nat::NaturalImpurityOrbital)
+    n = 2 + n_valence(H_nat) + n_conduction(H_nat)
+    return (n, n)
+end
+Base.size(H_nat::NaturalImpurityOrbital, d::Integer) = d <= 2 ? size(H_nat)[d] : 1
+
+"""
+    natural_impurity_orbital(Δ::PolesSum; tol::Real = 1.0e-8)
+
+Transform the hybridization function `Δ` to the natural impurity orbital basis.
+
+The basis is built from the reference ``G(z) = 1/(z - Δ(z))``.
+Weight within `tol` of zero is shared evenly between valence and conduction sites.
+"""
+function natural_impurity_orbital(Δ::PolesSum; tol::Real = 1.0e-8)
+    # Green's function on eigenbasis
+    H = arrowhead_matrix(Δ)
+    locs, V = eigen(Symmetric(H))
+    amps = view(V, 1, :)
+
+    # Split into occupied (valence) and unoccupied (conduction) sites.
+    # Split weight at Fermi-level evenly.
+    n_occ = count(<(-tol), locs)
+    n_zero = count(ϵ -> abs(ϵ) <= tol, locs) # can be degenerate
+    amp_zero = norm(view(amps, (n_occ + 1):(n_occ + n_zero)))
+    locs_v = locs[1:n_occ]
+    amps_v = amps[1:n_occ]
+    locs_c = locs[(n_occ + n_zero + 1):end]
+    amps_c = amps[(n_occ + n_zero + 1):end]
+    if !iszero(amp_zero)
+        push!(locs_v, 0)
+        push!(amps_v, amp_zero / sqrt(2))
+        pushfirst!(locs_c, 0)
+        pushfirst!(amps_c, amp_zero / sqrt(2))
+    end
+    isempty(locs_v) && throw(ArgumentError("no occupied (valence) states"))
+    isempty(locs_c) && throw(ArgumentError("no empty (conduction) states"))
+
+    # tridiagonalization to get chains
+    a_v = norm(amps_v)
+    a_c = norm(amps_c)
+    rmul!(amps_v, inv(a_v))
+    rmul!(amps_c, inv(a_c))
+    e_v, t_v = _tridiagonalize(locs_v, amps_v)
+    e_c, t_c = _tridiagonalize(locs_c, amps_c)
+
+    # Rotate bonding/antibonding orbitals back to impurity and mirror site.
+    H_diag = SDiagonal(popfirst!(e_v), popfirst!(e_c))
+    R = @SMatrix [
+        a_v   a_c
+        a_c  -a_v
+    ]
+    H_ib = R' * H_diag * R
+    H_ib = (H_ib + H_ib') / 2
+
+    # impurity-mirror to chain couplings
+    T = eltype(H_ib)
+    t_imp_v = isempty(t_v) ? zero(T) : popfirst!(t_v)
+    t_imp_c = isempty(t_c) ? zero(T) : popfirst!(t_c)
+    i_v = a_v * t_imp_v
+    b_v = a_c * t_imp_v
+    i_c = a_c * t_imp_c
+    b_c = -a_v * t_imp_c
+
+    return NaturalImpurityOrbital(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
+end
+
+# `v` must be normalized
+function _tridiagonalize(locs::AbstractVector{<:Real}, v::AbstractVector{<:Real})
+    Q = [v nullspace(v')]
+    # Lower triangle preserves the first basis vector (impurity).
+    _, _, α, β = LAPACK.hetrd!('L', Q' * Diagonal(locs) * Q)
+    map!(abs, β)
+    return α, β
 end
 
 """
     natural_impurity_orbital_operator(
-        H_nat::Matrix{T},
-        H_int::Operator,
+        H_nat::NaturalImpurityOrbital{T},
+        H_int::Operator{T},
         ϵ_imp::T,
-        fock_space::FockSpace,
-        n_occ::Int,
-        n_v_bit::Int=1,
-        n_c_bit::Int=1,
-    ) where {T<:Real}
+        fs::FockSpace,
+        n_v_bit::Int = 1,
+        n_c_bit::Int = 1,
+    ) where {T <: Real}
 
-Convert natural impurity orbital Hamiltonian `H_nat` to `Operator`.
+Convert natural impurity orbital Hamiltonian to `Operator`.
+
+Ordering is
+`[i, b, n_v[1...n_v_bit], n_c[1...n_c_bit], n_v[n_v_bit+1...end], n_c[n_c_bit+1...end]`.
 
 # Arguments
-- `H_nat::Matrix{T}`: natural impurity orbital Hamiltonian
-- `H_int::Operator`: interacting Hamiltonian
-- `U::T`: Coulomb repulsion on impurity
+- `H_nat::NaturalImpurityOrbital{T}`: natural impurity orbital representation
+- `H_int::Operator{T}`: interacting Hamiltonian
 - `ϵ_imp::T`: on-site energy of impurity
-- `fock_space::FockSpace`: Fock Space used for the system
-- `n_occ::Int`: number of occupied sites
+- `fs::FockSpace`: Fock Space used for the system
 - `n_v_bit::Int=1`: number of valence bath sites in bit component
 - `n_c_bit::Int=1`: number of conduction bath sites in bit component
 """
 function natural_impurity_orbital_operator(
-        H_nat::Matrix{T},
-        H_int::Operator,
+        H_nat::NaturalImpurityOrbital{T},
+        H_int::Operator{T},
         ϵ_imp::T,
-        fock_space::FockSpace,
-        n_occ::Int,
+        fs::FockSpace,
         n_v_bit::Int = 1,
         n_c_bit::Int = 1,
     ) where {T <: Real}
-    ishermitian(H_nat) || throw(ArgumentError("H_nat not Hermitian"))
-    n = size(H_nat, 1)
-    n_emp = n - n_occ
-    n_v = n_occ - 1
-    n_c = n_emp - 1
-    0 < n_v_bit <= n_v || throw(ArgumentError(lazy"violating 0 < $(n_v_bit) <= $(n_v)"))
-    0 < n_c_bit <= n_c || throw(ArgumentError(lazy"violating 0 < $(n_c_bit) <= $(n_c)"))
-    c = annihilators(fock_space)
-    # impurity i and mirror bath site b
-    H = _add_impurity_terms(H_int, c, H_nat, ϵ_imp, n_occ)
+    n_v = n_valence(H_nat)
+    n_c = n_conduction(H_nat)
+    0 < n_v_bit <= n_v || throw(ArgumentError("too many valence sites in bit component"))
+    0 < n_c_bit <= n_c || throw(ArgumentError("too many conduction sites in bit component"))
+    c = annihilators(fs)
+    n = occupations(fs)
+    H = _add_impurity_terms(H_int, c, H_nat, ϵ_imp)
     for σ in axes(c, 2)
         # valence bath sites
         for i in 1:n_v
-            j = 1 + i # Index in H_nat.
-            # Let `k` be the index in the bit component.
             if i <= n_v_bit
-                k = 2 + i
+                j = 2 + i
             else
-                k = 2 + n_c_bit + i
+                j = 2 + i + n_c_bit
             end
             # bath site
-            H += H_nat[j, j] * c[k, σ]' * c[k, σ]
+            H += H_nat.e_v[i] * n[j, σ]
             if i == 1
-                # hopping v_1 <-> i
-                H += H_nat[j, 1] * c[1, σ]' * c[k, σ]
-                H += H_nat[j, 1] * c[k, σ]' * c[1, σ]
-                # hopping v_1 <-> b
-                H += H_nat[j, n_occ + 1] * c[2, σ]' * c[k, σ]
-                H += H_nat[j, n_occ + 1] * c[k, σ]' * c[2, σ]
+                # hopping (i, b) ↔ v_1
+                H += H_nat.i_v * c[1, σ]' * c[j, σ]
+                H += H_nat.i_v * c[j, σ]' * c[1, σ]
+                H += H_nat.b_v * c[2, σ]' * c[j, σ]
+                H += H_nat.b_v * c[j, σ]' * c[2, σ]
             elseif i == n_v_bit + 1
-                # hopping v_(n_v_bit + 1) <-> v_(n_v_bit)
-                H += H_nat[j, j - 1] * c[k, σ]' * c[2 + n_v_bit, σ]
-                H += H_nat[j, j - 1] * c[2 + n_v_bit, σ]' * c[k, σ]
+                # hopping v_(n_v_bit) ↔ v_(n_v_bit + 1)
+                H += H_nat.t_v[n_v_bit] * c[2 + n_v_bit, σ]' * c[j, σ]
+                H += H_nat.t_v[n_v_bit] * c[j, σ]' * c[2 + n_v_bit, σ]
             else
                 # hopping to previous neighbor
-                H += H_nat[j - 1, j] * c[k - 1, σ]' * c[k, σ]
-                H += H_nat[j - 1, j] * c[k, σ]' * c[k - 1, σ]
+                H += H_nat.t_v[i - 1] * c[j - 1, σ]' * c[j, σ]
+                H += H_nat.t_v[i - 1] * c[j, σ]' * c[j - 1, σ]
             end
         end
         # conduction bath sites
         for i in 1:n_c
-            j = n_occ + 1 + i # Index in H_nat.
-            # Let k be the index in the bit component.
             if i <= n_c_bit
-                k = 2 + n_v_bit + i
+                j = 2 + i + n_v_bit
             else
-                k = j
+                j = 2 + i + n_v
             end
             # bath site
-            H += H_nat[j, j] * c[k, σ]' * c[k, σ]
+            H += H_nat.e_c[i] * n[j, σ]
             if i == 1
-                # hopping c_1 <-> i
-                H += H_nat[j, 1] * c[1, σ]' * c[k, σ]
-                H += H_nat[j, 1] * c[k, σ]' * c[1, σ]
-                # hopping c_1 <-> b
-                H += H_nat[j, n_occ + 1] * c[2, σ]' * c[k, σ]
-                H += H_nat[j, n_occ + 1] * c[k, σ]' * c[2, σ]
+                # hopping (i, b) ↔ c_1
+                H += H_nat.i_c * c[1, σ]' * c[j, σ]
+                H += H_nat.i_c * c[j, σ]' * c[1, σ]
+                H += H_nat.b_c * c[2, σ]' * c[j, σ]
+                H += H_nat.b_c * c[j, σ]' * c[2, σ]
             elseif i == n_c_bit + 1
-                # hopping c_(n_c_bit + 1) <-> c_(n_c_bit)
-                H += H_nat[j, j - 1] * c[k, σ]' * c[2 + n_v_bit + n_c_bit, σ]
-                H += H_nat[j, j - 1] * c[2 + n_v_bit + n_c_bit, σ]' * c[k, σ]
+                # hopping c_(n_c_bit) ↔ c_(n_c_bit + 1)
+                H += H_nat.t_c[n_c_bit] * c[2 + n_v_bit + n_c_bit, σ]' * c[j, σ]
+                H += H_nat.t_c[n_c_bit] * c[j, σ]' * c[2 + n_v_bit + n_c_bit, σ]
             else
                 # hopping to previous neighbor
-                H += H_nat[j - 1, j] * c[k - 1, σ]' * c[k, σ]
-                H += H_nat[j - 1, j] * c[k, σ]' * c[k - 1, σ]
+                H += H_nat.t_c[i - 1] * c[j - 1, σ]' * c[j, σ]
+                H += H_nat.t_c[i - 1] * c[j, σ]' * c[j - 1, σ]
             end
         end
     end
@@ -184,172 +297,158 @@ end
 
 """
     natural_impurity_orbital_ras_operator(
-        H_nat::Matrix{T},
-        H_int::Operator,
+        H_nat::NaturalImpurityOrbital{T},
+        H_int::Operator{T},
         ϵ_imp::T,
-        fock_space::FockSpace,
-        n_occ::Int,
-        n_v_bit::Int=1,
-        n_c_bit::Int=1,
-        excitation::Int=1,
-    ) where {T<:Real}
+        fs::FockSpace,
+        n_v_bit::Int = 1,
+        n_c_bit::Int = 1,
+        p::Int = 1,
+    ) where {T <: Real}
 
-Convert natural impurity orbital Hamiltonian `H_nat` to `RASOperator`.
+Convert natural impurity orbital Hamiltonian to `RASOperator`.
 
 # Arguments
-- `H_nat::Matrix{T}`: natural impurity orbital Hamiltonian
-- `H_int::Operator`: interacting Hamiltonian
+- `H_nat::NaturalImpurityOrbital{T}`: natural impurity orbital representation
+- `H_int::Operator{T}`: interacting Hamiltonian
 - `ϵ_imp::T`: on-site energy of impurity
-- `fock_space::FockSpace`: Fock Space used for the system
-- `n_occ::Int`: number of occupied sites
+- `fs::FockSpace`: Fock Space used for the system
 - `n_v_bit::Int=1`: number of valence bath sites in bit component
 - `n_c_bit::Int=1`: number of conduction bath sites in bit component
-- `excitation::Int=1`: maximum excitation in bit component
+- `p::Int=1`: maximum excitation in bit component
 
 See also `RASOperator`.
 """
 function natural_impurity_orbital_ras_operator(
-        H_nat::Matrix{T},
-        H_int::Operator,
+        H_nat::NaturalImpurityOrbital{T},
+        H_int::Operator{T},
         ϵ_imp::T,
-        fock_space::FockSpace,
-        n_occ::Int,
+        fs::FockSpace,
         n_v_bit::Int = 1,
         n_c_bit::Int = 1,
-        excitation::Int = 1,
+        p::Int = 1,
     ) where {T <: Real}
-    # Check if function for zero chain length should be used.
-    n_v_bit === n_c_bit === 0 && return _natural_impurity_orbital_ras_operator_zero(
-        H_nat, H_int, ϵ_imp, fock_space, n_occ, excitation
-    )
-    # check input
-    ishermitian(H_nat) || throw(ArgumentError("H_nat not Hermitian"))
-    nflavours(fock_space) >= 2 + n_v_bit + n_c_bit ||
-        throw(ArgumentError("fock_space too small"))
+    p >= 0 || throw(ArgumentError("negative excitation"))
+    if iszero(n_v_bit) && iszero(n_c_bit)
+        return _natural_impurity_orbital_ras_operator_zero(
+            H_nat, H_int, ϵ_imp, fs, p,
+        )
+    end
     n_v_bit >= 1 || throw(ArgumentError("invalid n_v_bit"))
     n_c_bit >= 1 || throw(ArgumentError("invalid n_c_bit"))
-    excitation >= 0 || throw(ArgumentError("negative excitation"))
-    n = size(H_nat, 1)
-    n_emp = n - n_occ
-    n_bit = 2 + n_v_bit + n_c_bit
-    n_v = n_occ - 1
-    n_c = n_emp - 1
-    n_v_bit < n_v || throw(ArgumentError("n_v_bit too big"))
-    n_c_bit < n_c || throw(ArgumentError("n_c_bit too big"))
-    c = annihilators(fock_space)
+    n_v = n_valence(H_nat)
+    n_c = n_conduction(H_nat)
+    n_v_bit <= n_v || throw(ArgumentError("n_v_bit too big"))
+    n_c_bit <= n_c || throw(ArgumentError("n_c_bit too big"))
 
-    # Create Bitoperator H_bit.
-    H_bit = _add_impurity_terms(H_int, c, H_nat, ϵ_imp, n_occ)
+    # Create bit Operator
+    n_bit = 2 + n_v_bit + n_c_bit
+    c = annihilators(fs)
+    H_bit = _add_impurity_terms(H_int, c, H_nat, ϵ_imp)
     for σ in axes(c, 2)
-        # valence bath sites
-        H_bit = _add_bath_chain(H_bit, c, σ, H_nat, n_occ, 1, 2, n_v_bit)
-        # conduction bath sites
-        H_bit = _add_bath_chain(H_bit, c, σ, H_nat, n_occ, n_occ + 1, 2 + n_v_bit, n_c_bit)
+        H_bit = _add_chain_to_bit(H_bit, c, σ, H_nat, true, 2, n_v_bit)
+        H_bit = _add_chain_to_bit(H_bit, c, σ, H_nat, false, 2 + n_v_bit, n_c_bit)
     end
 
     # Create VectorOperator
     n_v_vector = n_v - n_v_bit
     n_c_vector = n_c - n_c_bit
-    foo = diag(H_nat)
-    esite = [foo[(2 + n_v_bit):n_occ]; foo[(n_occ + n_c_bit + 2):end]]
-    foo = diag(H_nat, 1)
-    ehop = [foo[(2 + n_v_bit):n_occ]; foo[(n_occ + n_c_bit + 2):end]]
+    esite = [H_nat.e_v[(1 + n_v_bit):end]; H_nat.e_c[(1 + n_c_bit):end]]
+    ehop = [
+        H_nat.t_v[(1 + n_v_bit):end];
+        zero(T);  # no hopping between valence/conduction chains
+        H_nat.t_c[(1 + n_c_bit):end];
+    ]
 
     # Create MixedOperator
     # (i, j, amp)
     mixed = (
         # valence bath site
-        (2 + n_v_bit, 1, foo[1 + n_v_bit]),
+        (2 + n_v_bit, 1, H_nat.t_v[n_v_bit]),
         # conduction bath site
-        (2 + n_v_bit + n_c_bit, n_v_vector + 1, foo[n_occ + n_c_bit + 1]),
+        (2 + n_v_bit + n_c_bit, n_v_vector + 1, H_nat.t_c[n_c_bit]),
     )
 
-    return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, excitation)
+    return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 
 # Same as `natural_impurity_orbital_operator` but with `n_v_bit === n_c_bit === 0`.
 function _natural_impurity_orbital_ras_operator_zero(
-        H_nat::Matrix{T},
-        H_int::Operator,
+        H_nat::NaturalImpurityOrbital{T},
+        H_int::Operator{T},
         ϵ_imp::T,
-        fock_space::FockSpace,
-        n_occ::Int,
-        excitation::Int = 1,
+        fs::FockSpace,
+        p::Int,
     ) where {T <: Real}
-    ishermitian(H_nat) || throw(ArgumentError("H_nat not Hermitian"))
-    nflavours(fock_space) >= 2 || throw(ArgumentError("fock_space too small"))
-    excitation >= 0 || throw(ArgumentError("negative excitation"))
-    n = size(H_nat, 1)
-    n_emp = n - n_occ
-    n_bit = 2
-    n_v = n_occ - 1
-    n_c = n_emp - 1
-    c = annihilators(fock_space)
+    c = annihilators(fs)
 
-    # Create Bitoperator H_bit.
-    H_bit = _add_impurity_terms(H_int, c, H_nat, ϵ_imp, n_occ)
+    # Create bit Operator
+    n_bit = 2
+    H_bit = _add_impurity_terms(H_int, c, H_nat, ϵ_imp)
 
     # Create VectorOperator
-    n_v_vector = n_v
-    n_c_vector = n_c
-    foo = diag(H_nat)
-    esite = [foo[2:n_occ]; foo[(n_occ + 2):end]]
-    foo = diag(H_nat, 1)
-    ehop = [foo[2:n_occ]; foo[(n_occ + 2):end]]
+    n_v_vector = n_valence(H_nat)
+    n_c_vector = n_conduction(H_nat)
+    esite = [H_nat.e_v; H_nat.e_c]
+    ehop = [H_nat.t_v; zero(T); H_nat.t_c]  # no hopping between valence/conduction chains
 
     # Create MixedOperator
     # (i, j, amp)
     mixed = (
-        (1, 1, H_nat[1, 2]), # i <-> v1
-        (2, 1, H_nat[n_occ + 1, 2]), # b <-> v1
-        (1, n_v_vector + 1, H_nat[1, n_occ + 2]), # i <-> c1
-        (2, n_v_vector + 1, H_nat[n_occ + 1, n_occ + 2]), # b <-> c1
+        (1, 1, H_nat.i_v),        # i ↔ v1
+        (2, 1, H_nat.b_v),        # b ↔ v1
+        (1, n_v_vector + 1, H_nat.i_c),  # i ↔ c1
+        (2, n_v_vector + 1, H_nat.b_c),  # b ↔ c1
     )
 
-    return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, excitation)
+    return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 
-# Add the impurity on-site energy and the impurity–mirror-site hopping.
+# Add the impurity on-site energy and the impurity-mirror-site hopping.
 # This block is identical for the full and RAS operator constructions.
-function _add_impurity_terms(H, c, H_nat::AbstractMatrix, ϵ_imp, n_occ::Int)
+function _add_impurity_terms(H, c, H_nat::NaturalImpurityOrbital, ϵ_imp)
     for σ in axes(c, 2)
         # impurity i
         H += ϵ_imp * c[1, σ]' * c[1, σ]
-        # mirror bath site b
-        H += H_nat[n_occ + 1, n_occ + 1] * c[2, σ]' * c[2, σ]
-        # hopping i <-> b
-        H += H_nat[n_occ + 1, 1] * c[1, σ]' * c[2, σ]
-        H += H_nat[n_occ + 1, 1] * c[2, σ]' * c[1, σ]
+        # mirror site b
+        H += H_nat.H_ib[2, 2] * c[2, σ]' * c[2, σ]
+        # hopping i ↔ b
+        H += H_nat.H_ib[2, 1] * c[1, σ]' * c[2, σ]
+        H += H_nat.H_ib[2, 1] * c[2, σ]' * c[1, σ]
     end
     return H
 end
 
-# Add the on-site energies and nearest-neighbor hopping of one bath-site chain
+# Add the on-site energies and nearest-neighbor hopping of given chain
 # (valence or conduction) inside the RAS bit component.
-function _add_bath_chain(H, c, σ, H_nat::AbstractMatrix, n_occ::Int, base_nat::Int, base_bit::Int, n_chain::Int)
+function _add_chain_to_bit(
+        H::Operator,
+        c,
+        σ,
+        H_nat::NaturalImpurityOrbital,
+        is_valence::Bool,
+        offset_bit::Int,
+        n_chain::Int,
+    )
+    e = is_valence ? H_nat.e_v : H_nat.e_c
+    t = is_valence ? H_nat.t_v : H_nat.t_c
     for i in 1:n_chain
-        site_nat = base_nat + i # site index in H_nat
-        site_bit = base_bit + i # site index in bit component
+        site_bit = offset_bit + i
         # bath site
-        H += H_nat[site_nat, site_nat] * c[site_bit, σ]' * c[site_bit, σ]
+        H += e[i] * c[site_bit, σ]' * c[site_bit, σ]
         if i == 1
-            # hopping chain start <-> i and chain start <-> b
-            H += H_nat[site_nat, 1] * c[1, σ]' * c[site_bit, σ]
-            H += H_nat[site_nat, 1] * c[site_bit, σ]' * c[1, σ]
-            H += H_nat[site_nat, n_occ + 1] * c[2, σ]' * c[site_bit, σ]
-            H += H_nat[site_nat, n_occ + 1] * c[site_bit, σ]' * c[2, σ]
+            # hopping chain start ↔ i and chain start ↔ b
+            H_i = is_valence ? H_nat.i_v : H_nat.i_c
+            H_b = is_valence ? H_nat.b_v : H_nat.b_c
+            H += H_i * c[1, σ]' * c[site_bit, σ]
+            H += H_i * c[site_bit, σ]' * c[1, σ]
+            H += H_b * c[2, σ]' * c[site_bit, σ]
+            H += H_b * c[site_bit, σ]' * c[2, σ]
         else
             # hopping to previous neighbor
-            H += H_nat[site_nat - 1, site_nat] * c[site_bit - 1, σ]' * c[site_bit, σ]
-            H += H_nat[site_nat - 1, site_nat] * c[site_bit, σ]' * c[site_bit - 1, σ]
+            H += t[i - 1] * c[site_bit - 1, σ]' * c[site_bit, σ]
+            H += t[i - 1] * c[site_bit, σ]' * c[site_bit - 1, σ]
         end
     end
     return H
-end
-
-# Löwdin-orthonormalize the bath states of `B` in place, keeping the impurity weight as-is.
-function _lowdin!(B::AbstractMatrix)
-    bb = @view B[:, 2:end]
-    bb .= first(_orthonormalize_SVD(bb))
-    return nothing
 end

@@ -53,36 +53,36 @@ using Test
         L_c = 1
         p = 2
         n_kryl = 5
-        n_sites = 1 + n_bath
 
         Δ = hybridization_function_bethe_simple(n_bath)
-        H_nat, n_occ = natural_impurity_orbital(arrowhead_matrix(Δ))
-        n_bit, V_v, V_c = get_RAS_parameters(n_sites, n_occ, L_c, L_v)
+        H_nat = natural_impurity_orbital(Δ)
+        n_sites = size(H_nat, 1)
+        n_bit, V_v, V_c = get_RAS_parameters(n_sites, n_valence(H_nat), L_c, L_v)
 
         # RASWavefunction
         fs = FockSpace(Orbitals(n_bit), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-        H = natural_impurity_orbital_ras_operator(H_nat, H_int, -μ, fs, n_occ, L_v, L_c, p)
+        H = natural_impurity_orbital_ras_operator(H_nat, H_int, -μ, fs, L_v, L_c, p)
         ψ_start = RASWavefunction_singlet(Dict{UInt64, Float64}, L_v, L_c, V_v, V_c, p)
 
         # 10 steps total
         E0, ψ0 = ground_state!(H, ψ_start, n_kryl, 10, 0)
-        @test E0 ≈ -21.52794995443462 rtol = 2.0e-13
+        @test E0 ≈ -21.52794995443258 rtol = 2.0e-13
         foo = H * ψ0
         var = foo ⋅ foo
         @test var < 3.0e-8
 
         # 20 steps total
         E0, ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
-        @test E0 ≈ -21.52794999041698 rtol = 2.0e-13
+        @test E0 ≈ -21.527949990414943 rtol = 2.0e-13
         foo = H * ψ0
         var = foo ⋅ foo
         @test var < 3.0e-13
 
         # 30 steps total
         E0, ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
-        @test E0 ≈ -21.52794999041725 rtol = 2.0e-13
+        @test E0 ≈ -21.527949990415216 rtol = 2.0e-13
         foo = H * ψ0
         var = foo ⋅ foo
         @test var < eps()
@@ -91,7 +91,7 @@ using Test
         fs = FockSpace(Orbitals(n_sites), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-        H_wf = natural_impurity_orbital_operator(H_nat, H_int, -μ, fs, n_occ, L_v, L_c)
+        H_wf = natural_impurity_orbital_operator(H_nat, H_int, -μ, fs, L_v, L_c)
         Fermions.shift_spectrum!(H_wf, E0)
         ψ0_wf = Wavefunction(ψ0)
         foo = H_wf * ψ0_wf

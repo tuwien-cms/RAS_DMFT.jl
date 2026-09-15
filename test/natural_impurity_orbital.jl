@@ -1,415 +1,421 @@
 using Fermions
-using Fermions.Wavefunctions
 using LinearAlgebra
 using RAS_DMFT
-using SparseArrays
+using StaticArrays: @SMatrix
 using Test
 
 @testset "natural impurity orbitals" begin
-    @testset "matrix transformation" begin
-        Δ = hybridization_function_bethe_simple(11)
-        m = arrowhead_matrix(Δ)
-        H, n_occ = natural_impurity_orbital(m)
+    @testset "NaturalImpurityOrbital" begin
+        @testset "constructor" begin
+            H_ib = @SMatrix [-1.0 0.5; 0.5 1.0]
+            i_v, i_c, b_v, b_c = 0.1, 0.2, 0.3, 0.4
+            e_v = [-2.0, -1.5]
+            t_v = [0.7]
+            e_c = [1.5, 2.0]
+            t_c = [0.8]
+            H_nat = NaturalImpurityOrbital(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
 
-        @test n_occ === 6
-        @test size(H) === (12, 12)
-        d = diag(H)
-        @test d[1:6] ≈ -d[7:12] atol = 1.0e2 * eps() # PHS
-        @test ishermitian(H)
-        @test H ≈ [
-            1.161007701055029e-16 0.18330573804110445 0.0 0.0 0.0 0.0 -0.42754884259276227 -0.18330573804110853 0.0 0.0 0.0 0.0
-            0.18330573804110445 -0.5076151092043915 0.2355852387704299 0.0 0.0 0.0 0.1833057380411033 0.0 0.0 0.0 0.0 0.0
-            0.0 0.2355852387704299 -0.5515345193381724 -0.2104776852190996 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-            0.0 0.0 -0.2104776852190996 -0.6121205400242606 -0.17304126343374435 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-            0.0 0.0 0.0 -0.17304126343374435 -0.7038886821335019 0.11528512946095112 0.0 0.0 0.0 0.0 0.0 0.0
-            0.0 0.0 0.0 0.0 0.11528512946095112 -0.8454072119862861 0.0 0.0 0.0 0.0 0.0 0.0
-            -0.42754884259276227 0.1833057380411033 0.0 0.0 0.0 0.0 5.457797046034841e-15 0.18330573804110967 0.0 0.0 0.0 0.0
-            -0.18330573804110853 0.0 0.0 0.0 0.0 0.0 0.18330573804110967 0.5076151092043929 -0.2355852387704316 0.0 0.0 0.0
-            0.0 0.0 0.0 0.0 0.0 0.0 0.0 -0.2355852387704316 0.551534519338173 0.21047768521910148 0.0 0.0
-            0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.21047768521910148 0.612120540024263 -0.17304126343374962 0.0
-            0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -0.17304126343374962 0.7038886821335045 -0.1152851294609553
-            0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 -0.1152851294609553 0.8454072119862802
-        ] atol = 2.0e-13
+            @test H_nat.H_ib === H_ib
+            @test H_nat.i_v === i_v
+            @test H_nat.i_c === i_c
+            @test H_nat.b_v === b_v
+            @test H_nat.b_c === b_c
+            @test H_nat.e_v === e_v
+            @test H_nat.t_v === t_v
+            @test H_nat.e_c === e_c
+            @test H_nat.t_c === t_c
 
-        Δ = hybridization_function_bethe_simple(301)
-        m = arrowhead_matrix(Δ)
-        H, n_occ = natural_impurity_orbital(m)
-        @test n_occ === 151
-        E = eigvals(H)
-        @test norm(E[1:151] + reverse(E[152:end])) < sqrt(eps())
+            # non-symmetric H_ib
+            H_asym = @SMatrix [-1.0 0.5; 0.6 1.0]
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_asym, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c
+            )
 
-        # non-Hermitian matrix
-        m = rand(10, 10)
-        @test_throws ArgumentError natural_impurity_orbital(m)
+            # zero valence energy
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, [-2.0, 0.0], t_v, e_c, t_c
+            )
+            # positive valence energy
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, [-2.0, 1.5], t_v, e_c, t_c
+            )
 
-        # complex matrix
-        @test !hasmethod(natural_impurity_orbital, Tuple{Matrix{ComplexF64}})
+            # zero conduction energy
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, t_v, [0.0, 2.0], t_c
+            )
+            # negative conduction energy
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, t_v, [1.5, -2.0], t_c
+            )
 
-        # sites with zero hybridization, Löwdin must not return negative eigenvalues
-        Δ = hybridization_function_bethe_grid(range(-2, 2; length = 31))
-        natural_impurity_orbital(arrowhead_matrix(Δ))
+            # valence length mismatch
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, [0.7, 0.8], e_c, t_c
+            )
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, Float64[], e_c, t_c
+            )
 
-        # multiply degenerate zero-energy states
-        U = 0.5 * [1 1 1 1; 1 1 -1 -1; 1 -1 1 -1; 1 -1 -1 1]
-        H0 = Diagonal([-2.0, 0.0, 0.0, 2.0])
-        H_nat, n_occ = natural_impurity_orbital(U * H0 * U')
-        @test n_occ === 2
-        @test ishermitian(H_nat)
-        @test sort(eigvals(H_nat)) ≈ sort(eigvals(H0)) atol = 1.0e3 * eps()
-    end # matrix transformation
+            # conduction length mismatch
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, [0.7, 0.8]
+            )
+            @test_throws ArgumentError NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, Float64[]
+            )
+
+            # empty chains
+            NaturalImpurityOrbital(
+                H_ib, i_v, i_c, b_v, b_c, Float64[], Float64[], Float64[], Float64[]
+            )
+        end # constructor
+
+        @testset "custom functions" begin
+            H_ib = @SMatrix [-1.0 0.5; 0.5 1.0]
+            i_v, i_c, b_v, b_c = 0.1, 0.2, 0.3, 0.4
+            e_v = [-2.0, -1.5]
+            t_v = [0.7]
+            e_c = [1.5, 2.0, 1.0]
+            t_c = [0.8, 0.9]
+            H_nat = NaturalImpurityOrbital(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
+
+            @test n_conduction(H_nat) == 3
+
+            @test n_valence(H_nat) == 2
+        end # custom functions
+
+        @testset "Base" begin
+            H_ib = @SMatrix [-1.0 0.5; 0.5 1.0]
+            i_v, i_c, b_v, b_c = 0.1, 0.2, 0.3, 0.4
+            e_v = [-2.0, -1.5]
+            t_v = [0.7]
+            e_c = [1.5, 2.0, 1.0]
+            t_c = [0.8, 0.9]
+            H_nat = NaturalImpurityOrbital(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
+
+            @test eltype(H_nat) == Float64
+            @test eltype(typeof(H_nat)) == Float64
+
+            H_ref = [
+                -1.0  0.5   0.1   0.0  0.2  0.0  0.0
+                0.5  1.0   0.3   0.0  0.4  0.0  0.0
+                0.1  0.3  -2.0   0.7  0.0  0.0  0.0
+                0.0  0.0   0.7  -1.5  0.0  0.0  0.0
+                0.2  0.4   0.0   0.0  1.5  0.8  0.0
+                0.0  0.0   0.0   0.0  0.8  2.0  0.9
+                0.0  0.0   0.0   0.0  0.0  0.9  1.0
+            ]
+            @test Matrix(H_nat) == H_ref
+
+            @test repr(H_nat) == "7×7 NaturalImpurityOrbital{Float64}"
+            @test repr(MIME"text/plain"(), H_nat) ==
+                "7×7 NaturalImpurityOrbital{Float64}:\n" *
+                sprint(Base.print_matrix, H_ref)
+
+            @test size(H_nat) == (7, 7)
+            @test_throws BoundsError size(H_nat, 0)
+            @test size(H_nat, 1) == 7
+            @test size(H_nat, 2) == 7
+            @test size(H_nat, 3) == 1
+        end # Base
+    end # NaturalImpurityOrbital
+
+    @testset "transformation" begin
+        @testset "PHS metal" begin
+            Δ = PolesSum([-2.0, -1.0, 0.0, 1.0, 2.0], [0.09, 0.09, 0.1, 0.09, 0.09])
+            H_nat = natural_impurity_orbital(Δ)
+            M = Matrix(H_nat)
+            E = eigvals(Symmetric(arrowhead_matrix(Δ)))
+            E_ib = eigvals(Symmetric(H_nat.H_ib))
+            E_occ = view(E, 1:searchsortedlast(E, 0))
+            E_nat = eigvals(Symmetric(M))
+
+            # same eigenvalues
+            @test E_nat ≈ E atol = 1.0e-13
+            # i, b at Fermi energy
+            @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-13
+            @test H_nat.H_ib[2, 2] ≈ 0 atol = 1.0e-13
+            # i, b hold one occupied and one empty level
+            @test E_ib[1] < 0 < E_ib[2]
+            # energy of the occupied levels is basis independent
+            @test sum(H_nat.e_v) + E_ib[1] ≈ sum(E_occ) atol = 1.0e-13
+            # PHS makes both chains mirror images of each other
+            @test H_nat.e_v ≈ -H_nat.e_c atol = 1.0e-13
+            @test H_nat.t_v ≈ H_nat.t_c atol = 1.0e-13
+            # every bath state hybridizes, sign is chosen to be positive
+            @test all(>(0), H_nat.t_v)
+            @test all(>(0), H_nat.t_c)
+            # impurity keeps its total hybridization, now split over b, v_1 and c_1
+            @test H_nat.H_ib[1, 2]^2 + H_nat.i_v^2 + H_nat.i_c^2 ≈
+                moment(Δ, 0) atol = 1.0e-13
+            # no net hopping: v_1 → i → c_1 cancels with v_1 → b → c_1
+            @test H_nat.i_v * H_nat.i_c ≈ -H_nat.b_v * H_nat.b_c atol = 1.0e-14
+            # impurity coupling splits evenly in PHS
+            @test abs(H_nat.b_v) ≈ abs(H_nat.i_v) atol = 1.0e-13
+            @test abs(H_nat.i_c) ≈ abs(H_nat.i_v) atol = 1.0e-13
+            @test abs(H_nat.b_c) ≈ abs(H_nat.i_v) atol = 1.0e-13
+        end # PHS metal
+
+        @testset "PHS insulator" begin
+            Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], fill(0.09, 4))
+            H_nat = natural_impurity_orbital(Δ)
+            M = Matrix(H_nat)
+            E = eigvals(Symmetric(arrowhead_matrix(Δ)))
+            E_ib = eigvals(Symmetric(H_nat.H_ib))
+            E_occ = view(E, 1:searchsortedlast(E, 0))
+            E_nat = eigvals(Symmetric(M))
+
+            # shared Fermi energy
+            mid = length(E_nat) ÷ 2
+            @test E_nat[mid] ≈ 0 atol = 1.0e-13
+            @test E_nat[mid + 1] ≈ 0 atol = 1.0e-13
+            deleteat!(E_nat, mid)
+            @test E_nat ≈ E atol = 1.0e-13
+            # i, b at Fermi energy
+            @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-13
+            @test H_nat.H_ib[2, 2] ≈ 0 atol = 1.0e-13
+            # i, b hold one occupied and one empty level
+            @test E_ib[1] < 0 < E_ib[2]
+            # energy of the occupied levels is basis independent
+            @test sum(H_nat.e_v) + E_ib[1] ≈ sum(E_occ) atol = 1.0e-13
+            # PHS makes both chains mirror images of each other
+            @test H_nat.e_v ≈ -H_nat.e_c atol = 1.0e-13
+            @test H_nat.t_v ≈ H_nat.t_c atol = 1.0e-13
+            # every bath state hybridizes, sign is chosen to be positive
+            @test all(>(0), H_nat.t_v)
+            @test all(>(0), H_nat.t_c)
+            # impurity keeps its total hybridization, now split over b, v_1 and c_1
+            @test H_nat.H_ib[1, 2]^2 + H_nat.i_v^2 + H_nat.i_c^2 ≈
+                moment(Δ, 0) atol = 1.0e-13
+            # no net hopping: v_1 → i → c_1 cancels with v_1 → b → c_1
+            @test H_nat.i_v * H_nat.i_c ≈ -H_nat.b_v * H_nat.b_c atol = 1.0e-14
+            # impurity coupling splits evenly in PHS
+            @test abs(H_nat.b_v) ≈ abs(H_nat.i_v) atol = 1.0e-13
+            @test abs(H_nat.i_c) ≈ abs(H_nat.i_v) atol = 1.0e-13
+            @test abs(H_nat.b_c) ≈ abs(H_nat.i_v) atol = 1.0e-13
+        end # PHS insulator
+
+        @testset "no PHS" begin
+            Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], [0.09, 0.04, 0.16, 0.09])
+            H_nat = natural_impurity_orbital(Δ)
+            M = Matrix(H_nat)
+            E = eigvals(Symmetric(arrowhead_matrix(Δ)))
+            E_ib = eigvals(Symmetric(H_nat.H_ib))
+            E_occ = view(E, 1:searchsortedlast(E, 0))
+            E_nat = eigvals(Symmetric(M))
+
+            # same eigenvalues
+            @test E_nat ≈ E atol = 1.0e-13
+            # i at Fermi energy, b is free to sit anywhere without PHS
+            @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-13
+            # i, b hold one occupied and one empty level
+            @test E_ib[1] < 0 < E_ib[2]
+            # energy of the occupied levels is basis independent
+            @test sum(H_nat.e_v) + E_ib[1] ≈ sum(E_occ) atol = 1.0e-13
+            # every bath state hybridizes, sign is chosen to be positive
+            @test all(>(0), H_nat.t_v)
+            @test all(>(0), H_nat.t_c)
+            # impurity keeps its total hybridization, now split over b, v_1 and c_1
+            @test H_nat.H_ib[1, 2]^2 + H_nat.i_v^2 + H_nat.i_c^2 ≈
+                moment(Δ, 0) atol = 1.0e-13
+            # no net hopping: v_1 → i → c_1 cancels with v_1 → b → c_1
+            @test H_nat.i_v * H_nat.i_c ≈ -H_nat.b_v * H_nat.b_c atol = 1.0e-14
+        end # no PHS
+
+        @testset "Bethe 301" begin
+            # Diagonalizing 302 sites is less accurate than the small systems
+            # above, so the symmetries only hold to a looser tolerance.
+            Δ = hybridization_function_bethe_simple(301)
+            H_nat = natural_impurity_orbital(Δ)
+            M = Matrix(H_nat)
+            E = eigvals(Symmetric(arrowhead_matrix(Δ)))
+            E_ib = eigvals(Symmetric(H_nat.H_ib))
+            E_occ = view(E, 1:searchsortedlast(E, 0))
+            E_nat = eigvals(Symmetric(M))
+
+            # same eigenvalues
+            @test E_nat ≈ E atol = 1.0e-13
+            # i, b at Fermi energy
+            @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-13
+            @test H_nat.H_ib[2, 2] ≈ 0 atol = 1.0e-11
+            # i, b hold one occupied and one empty level
+            @test E_ib[1] < 0 < E_ib[2]
+            # energy of the occupied levels is basis independent
+            @test sum(H_nat.e_v) + E_ib[1] ≈ sum(E_occ) atol = 1.0e-13
+            # PHS makes both chains mirror images of each other
+            @test H_nat.e_v ≈ -H_nat.e_c atol = 1.0e-11
+            @test H_nat.t_v ≈ H_nat.t_c atol = 1.0e-11
+            # every bath state hybridizes, sign is chosen to be positive
+            @test all(>(0), H_nat.t_v)
+            @test all(>(0), H_nat.t_c)
+            # impurity keeps its total hybridization, now split over b, v_1 and c_1
+            @test H_nat.H_ib[1, 2]^2 + H_nat.i_v^2 + H_nat.i_c^2 ≈
+                moment(Δ, 0) atol = 1.0e-13
+            # no net hopping: v_1 → i → c_1 cancels with v_1 → b → c_1
+            @test H_nat.i_v * H_nat.i_c ≈ -H_nat.b_v * H_nat.b_c atol = 1.0e-14
+            # impurity coupling splits evenly in PHS
+            @test abs(H_nat.b_v) ≈ abs(H_nat.i_v) atol = 1.0e-11
+            @test abs(H_nat.i_c) ≈ abs(H_nat.i_v) atol = 1.0e-11
+            @test abs(H_nat.b_c) ≈ abs(H_nat.i_v) atol = 1.0e-11
+        end # Bethe 301
+
+
+
+        @testset "regression values" begin
+            Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], [0.09, 0.04, 0.16, 0.09])
+            H_nat = natural_impurity_orbital(Δ)
+            @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-15
+            @test H_nat.H_ib[2, 1] ≈ -0.4989095164078891 rtol = 1.0e-12
+            @test H_nat.H_ib[2, 2] ≈ 1.1298453001727637 rtol = 1.0e-12
+            @test H_nat.i_v ≈ 0.338009682615291 rtol = 1.0e-12
+            @test H_nat.b_v ≈ 0.12788916713419668 rtol = 1.0e-12
+            @test H_nat.i_c ≈ 0.12976420498718252 rtol = 1.0e-12
+            @test H_nat.b_c ≈ -0.3429653873382279 rtol = 1.0e-12
+            @test H_nat.e_v ≈ [-1.6970956482922956, -1.2968693527623103] rtol = 1.0e-12
+            @test H_nat.t_v ≈ [0.4574613584283322] rtol = 1.0e-12
+            @test H_nat.e_c ≈ [1.8641197008818504] rtol = 1.0e-12
+            @test isempty(H_nat.t_c)
+        end # regression values
+    end # transformation
 
     @testset "operator" begin
-        # H_nat1 has 0 in irrelevant entries, H_nat2 has all values set.
-        # Both should still result in the same Hamiltonian.
-        H_nat1 = [
-            0 2 0 4 5 0
-            2 8 9 10 0 0
-            0 9 15 0 0 0
-            4 10 0 22 23 0
-            5 0 0 23 29 30
-            0 0 0 0 30 36
-        ]
-        H_nat2 = [
-            1 2 3 4 5 6
-            2 8 9 10 11 12
-            3 9 15 0 17 18
-            4 10 0 22 23 24
-            5 11 17 23 29 30
-            6 12 18 24 30 36
-        ]
-        n_occ = 3
-        U = 37
-        μ = 38
+        H_nat = NaturalImpurityOrbital(
+            (@SMatrix [0.0 1.0; 1.0 2.0]), # H_ib
+            3.0,                           # i_v
+            4.0,                           # i_c
+            5.0,                           # b_v
+            6.0,                           # b_c
+            [-7.0, -8.0],                  # e_v
+            [9.0],                         # t_v
+            [10.0, 11.0],                  # e_c
+            [12.0],                        # t_c
+        )
+        ϵ_imp = 13.0
+        U = 14.0
+        hop(c, σ, i, j, t) = t * (c[i, σ]' * c[j, σ] + c[j, σ]' * c[i, σ])
 
         @testset "Operator" begin
-            fs = FockSpace(Orbitals(12), FermionicSpin(1 // 2))
-            n = occupations(fs)
-            H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = natural_impurity_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1)
-            H2 = natural_impurity_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1)
-            @test H1 == H2
-
+            fs = FockSpace(Orbitals(6), FermionicSpin(1 // 2))
             c = annihilators(fs)
             n = occupations(fs)
-            H3 =
-                # impurity
-                U * n[1, 1 // 2] * n[1, -1 // 2] +
-                -38 * n[1, -1 // 2] +
-                -38 * n[1, 1 // 2] +
-                # mirror site
-                22 * n[2, -1 // 2] +
-                22 * n[2, 1 // 2] +
-                # bit component
-                8 * n[3, -1 // 2] +
-                8 * n[3, 1 // 2] +
-                29 * n[4, -1 // 2] +
-                29 * n[4, 1 // 2] +
-                # vector component
-                15 * n[5, -1 // 2] +
-                15 * n[5, 1 // 2] +
-                36 * n[6, -1 // 2] +
-                36 * n[6, 1 // 2] +
-                # hopping i <-> b
-                4 * c[1, -1 // 2]' * c[2, -1 // 2] +
-                4 * c[2, -1 // 2]' * c[1, -1 // 2] +
-                4 * c[1, 1 // 2]' * c[2, 1 // 2] +
-                4 * c[2, 1 // 2]' * c[1, 1 // 2] +
-                # hopping i <-> other
-                2 * c[1, -1 // 2]' * c[3, -1 // 2] +
-                2 * c[3, -1 // 2]' * c[1, -1 // 2] +
-                2 * c[1, 1 // 2]' * c[3, 1 // 2] +
-                2 * c[3, 1 // 2]' * c[1, 1 // 2] +
-                5 * c[1, -1 // 2]' * c[4, -1 // 2] +
-                5 * c[4, -1 // 2]' * c[1, -1 // 2] +
-                5 * c[1, 1 // 2]' * c[4, 1 // 2] +
-                5 * c[4, 1 // 2]' * c[1, 1 // 2] +
-                # hopping b <-> other
-                10 * c[2, -1 // 2]' * c[3, -1 // 2] +
-                10 * c[3, -1 // 2]' * c[2, -1 // 2] +
-                10 * c[2, 1 // 2]' * c[3, 1 // 2] +
-                10 * c[3, 1 // 2]' * c[2, 1 // 2] +
-                23 * c[2, -1 // 2]' * c[4, -1 // 2] +
-                23 * c[4, -1 // 2]' * c[2, -1 // 2] +
-                23 * c[2, 1 // 2]' * c[4, 1 // 2] +
-                23 * c[4, 1 // 2]' * c[2, 1 // 2] +
-                # hopping v
-                9 * c[3, -1 // 2]' * c[5, -1 // 2] +
-                9 * c[5, -1 // 2]' * c[3, -1 // 2] +
-                9 * c[3, 1 // 2]' * c[5, 1 // 2] +
-                9 * c[5, 1 // 2]' * c[3, 1 // 2] +
-                # hopping c
-                30 * c[4, -1 // 2]' * c[6, -1 // 2] +
-                30 * c[6, -1 // 2]' * c[4, -1 // 2] +
-                30 * c[4, 1 // 2]' * c[6, 1 // 2] +
-                30 * c[6, 1 // 2]' * c[4, 1 // 2]
-            @test H1 == H3
+            H_int = U * n[1, 1 // 2] * n[1, -1 // 2]
 
-            # raise sites in bit component
-            H1 = natural_impurity_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 2, 2)
-            H2 = natural_impurity_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 2, 2)
-            @test H1 == H2
-            H3 =
-                # impurity
-                U * n[1, 1 // 2] * n[1, -1 // 2] +
-                -38 * n[1, -1 // 2] +
-                -38 * n[1, 1 // 2] +
-                # mirror site
-                22 * n[2, -1 // 2] +
-                22 * n[2, 1 // 2] +
-                # bit component
-                8 * n[3, -1 // 2] +
-                8 * n[3, 1 // 2] +
-                15 * n[4, -1 // 2] +
-                15 * n[4, 1 // 2] +
-                29 * n[5, -1 // 2] +
-                29 * n[5, 1 // 2] +
-                36 * n[6, -1 // 2] +
-                36 * n[6, 1 // 2] +
-                # hopping i <-> b
-                4 * c[1, -1 // 2]' * c[2, -1 // 2] +
-                4 * c[2, -1 // 2]' * c[1, -1 // 2] +
-                4 * c[1, 1 // 2]' * c[2, 1 // 2] +
-                4 * c[2, 1 // 2]' * c[1, 1 // 2] +
-                # hopping i <-> other
-                2 * c[1, -1 // 2]' * c[3, -1 // 2] +
-                2 * c[3, -1 // 2]' * c[1, -1 // 2] +
-                2 * c[1, 1 // 2]' * c[3, 1 // 2] +
-                2 * c[3, 1 // 2]' * c[1, 1 // 2] +
-                5 * c[1, -1 // 2]' * c[5, -1 // 2] +
-                5 * c[5, -1 // 2]' * c[1, -1 // 2] +
-                5 * c[1, 1 // 2]' * c[5, 1 // 2] +
-                5 * c[5, 1 // 2]' * c[1, 1 // 2] +
-                # hopping b <-> other
-                10 * c[2, -1 // 2]' * c[3, -1 // 2] +
-                10 * c[3, -1 // 2]' * c[2, -1 // 2] +
-                10 * c[2, 1 // 2]' * c[3, 1 // 2] +
-                10 * c[3, 1 // 2]' * c[2, 1 // 2] +
-                23 * c[2, -1 // 2]' * c[5, -1 // 2] +
-                23 * c[5, -1 // 2]' * c[2, -1 // 2] +
-                23 * c[2, 1 // 2]' * c[5, 1 // 2] +
-                23 * c[5, 1 // 2]' * c[2, 1 // 2] +
-                # # hopping v
-                9 * c[3, -1 // 2]' * c[4, -1 // 2] +
-                9 * c[4, -1 // 2]' * c[3, -1 // 2] +
-                9 * c[3, 1 // 2]' * c[4, 1 // 2] +
-                9 * c[4, 1 // 2]' * c[3, 1 // 2] +
-                # # hopping c
-                30 * c[5, -1 // 2]' * c[6, -1 // 2] +
-                30 * c[6, -1 // 2]' * c[5, -1 // 2] +
-                30 * c[5, 1 // 2]' * c[6, 1 // 2] +
-                30 * c[6, 1 // 2]' * c[5, 1 // 2]
-            @test H1 == H3
+            # sites [i, b, v_1, c_1, v_2, c_2]
+            H_ref = H_int
+            for σ in axes(c, 2)
+                H_ref += ϵ_imp * n[1, σ]       # i
+                H_ref += 2.0 * n[2, σ]         # b
+                H_ref += hop(c, σ, 1, 2, 1.0)  # i ↔ b
+                H_ref += -7.0 * n[3, σ]        # v_1
+                H_ref += hop(c, σ, 1, 3, 3.0)  # i ↔ v_1
+                H_ref += hop(c, σ, 2, 3, 5.0)  # b ↔ v_1
+                H_ref += 10.0 * n[4, σ]        # c_1
+                H_ref += hop(c, σ, 1, 4, 4.0)  # i ↔ c_1
+                H_ref += hop(c, σ, 2, 4, 6.0)  # b ↔ c_1
+                H_ref += -8.0 * n[5, σ]        # v_2
+                H_ref += hop(c, σ, 3, 5, 9.0)  # v_1 ↔ v_2
+                H_ref += 11.0 * n[6, σ]        # c_2
+                H_ref += hop(c, σ, 4, 6, 12.0) # c_1 ↔ c_2
+            end
+            @test natural_impurity_orbital_operator(H_nat, H_int, ϵ_imp, fs, 1, 1) == H_ref
 
-            # non-Hermitian
-            @test_throws ArgumentError natural_impurity_orbital_operator(
-                rand(Int, 6, 6), H_int, -μ, fs, n_occ, 1, 1
-            )
+            # all bath sites in the bit component reorders them to
+            # [i, b, v_1, v_2, c_1, c_2]
+            H_ref = H_int
+            for σ in axes(c, 2)
+                H_ref += ϵ_imp * n[1, σ]       # i
+                H_ref += 2.0 * n[2, σ]         # b
+                H_ref += hop(c, σ, 1, 2, 1.0)  # i ↔ b
+                H_ref += -7.0 * n[3, σ]        # v_1
+                H_ref += hop(c, σ, 1, 3, 3.0)  # i ↔ v_1
+                H_ref += hop(c, σ, 2, 3, 5.0)  # b ↔ v_1
+                H_ref += -8.0 * n[4, σ]        # v_2
+                H_ref += hop(c, σ, 3, 4, 9.0)  # v_1 ↔ v_2
+                H_ref += 10.0 * n[5, σ]        # c_1
+                H_ref += hop(c, σ, 1, 5, 4.0)  # i ↔ c_1
+                H_ref += hop(c, σ, 2, 5, 6.0)  # b ↔ c_1
+                H_ref += 11.0 * n[6, σ]        # c_2
+                H_ref += hop(c, σ, 5, 6, 12.0) # c_1 ↔ c_2
+            end
+            @test natural_impurity_orbital_operator(H_nat, H_int, ϵ_imp, fs, 2, 2) == H_ref
         end # Operator
 
         @testset "RASOperator" begin
-            # some sites of each chain in bit component
             fs = FockSpace(Orbitals(4), FermionicSpin(1 // 2))
-            n = occupations(fs)
-            H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 0)
-            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 0)
-            @test typeof(H1) == typeof(H2)
-            @test H1 == H2
-
             c = annihilators(fs)
             n = occupations(fs)
-            H_bit =
-                # impurity
-                U * n[1, 1 // 2] * n[1, -1 // 2] +
-                -38 * n[1, -1 // 2] +
-                -38 * n[1, 1 // 2] +
-                # mirror site
-                22 * n[2, -1 // 2] +
-                22 * n[2, 1 // 2] +
-                # bit component
-                8 * n[3, -1 // 2] +
-                8 * n[3, 1 // 2] +
-                29 * n[4, -1 // 2] +
-                29 * n[4, 1 // 2] +
-                # hopping i <-> b
-                4 * c[1, -1 // 2]' * c[2, -1 // 2] +
-                4 * c[2, -1 // 2]' * c[1, -1 // 2] +
-                4 * c[1, 1 // 2]' * c[2, 1 // 2] +
-                4 * c[2, 1 // 2]' * c[1, 1 // 2] +
-                # hopping i <-> other
-                2 * c[1, -1 // 2]' * c[3, -1 // 2] +
-                2 * c[3, -1 // 2]' * c[1, -1 // 2] +
-                2 * c[1, 1 // 2]' * c[3, 1 // 2] +
-                2 * c[3, 1 // 2]' * c[1, 1 // 2] +
-                5 * c[1, -1 // 2]' * c[4, -1 // 2] +
-                5 * c[4, -1 // 2]' * c[1, -1 // 2] +
-                5 * c[1, 1 // 2]' * c[4, 1 // 2] +
-                5 * c[4, 1 // 2]' * c[1, 1 // 2] +
-                # hopping b <-> other
-                10 * c[2, -1 // 2]' * c[3, -1 // 2] +
-                10 * c[3, -1 // 2]' * c[2, -1 // 2] +
-                10 * c[2, 1 // 2]' * c[3, 1 // 2] +
-                10 * c[3, 1 // 2]' * c[2, 1 // 2] +
-                23 * c[2, -1 // 2]' * c[4, -1 // 2] +
-                23 * c[4, -1 // 2]' * c[2, -1 // 2] +
-                23 * c[2, 1 // 2]' * c[4, 1 // 2] +
-                23 * c[4, 1 // 2]' * c[2, 1 // 2]
-            H_mix = RASOperatorMixed{UInt64, Int}[]
-            @test H1.opbit == H_bit
-            @test H1.opmix == H_mix
-            @test H1.zero == 2 * 15
-            @test H1.one == SymTridiagonal(Int[], Int[])
-            @test H1.two == sparse(Int[], Int[], Int[])
-            @test H1.nbit == 4
-            @test H1.nfilled == 1
-            @test H1.nempty == 1
-            @test H1.excitation == 0
+            H_int = U * n[1, 1 // 2] * n[1, -1 // 2]
 
-            # single excitation
-            a = repeat([30 - 15, 30 + 36], 2)
-            b = zeros(Int, 3)
-            one = SymTridiagonal(a, b)
-            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 1)
-            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 1)
-            H_mix = [
-                RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 1, 2),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 2, 1),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]').terms), 0x0000000000000080, 1, 4),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]).terms), 0x0000000000000080, 4, 1),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]').terms), 0x0000000000000000, 3, 1),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]).terms), 0x0000000000000000, 1, 3),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]').terms), 0x0000000000000000, 5, 1),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]).terms), 0x0000000000000000, 1, 5),
-            ]
-            @test typeof(H1) == typeof(H2)
-            @test H1 == H2
-            @test H1.opbit == H_bit
-            @test H1.opmix == H_mix
-            @test H1.zero == 2 * 15
-            @test H1.one == one
-            @test H1.two == sparse(Int[], Int[], Int[])
-            @test H1.nbit == 4
-            @test H1.nfilled == 1
-            @test H1.nempty == 1
-            @test H1.excitation == 1
-
-            # double excitation
-            two = sparse(
-                Diagonal(
-                    [
-                        30 - 15 + 36,
-                        30 - 15 - 15,
-                        30 - 15 + 36,
-                        30 - 15 + 36,
-                        30 + 36 + 36,
-                        30 - 15 + 36,
-                    ]
-                ),
+            # L_v = L_c = 0
+            fs0 = FockSpace(Orbitals(2), FermionicSpin(1 // 2))
+            c0 = annihilators(fs0)
+            n0 = occupations(fs0)
+            H_int0 = U * n0[1, 1 // 2] * n0[1, -1 // 2]
+            H_ref0 = H_int0
+            for σ in axes(c0, 2)
+                H_ref0 += ϵ_imp * n0[1, σ]      # i
+                H_ref0 += 2.0 * n0[2, σ]        # b
+                H_ref0 += hop(c0, σ, 1, 2, 1.0) # i ↔ b
+            end
+            H0 = natural_impurity_orbital_ras_operator(
+                H_nat, H_int0, ϵ_imp, fs0, 0, 0, 2
             )
-            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 2)
-            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 2)
-            H_mix = [
-                RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 1, 2),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 2, 1),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]').terms), 0x0000000000000080, 1, 4),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]).terms), 0x0000000000000080, 4, 1),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]').terms), 0x0000000000000080, 2, 7),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]).terms), 0x0000000000000080, 7, 2),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 3, 6),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 6, 3),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]').terms), 0x0000000000000080, 3, 8),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]).terms), 0x0000000000000080, 8, 3),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 4, 7),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 7, 4),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 5, 9),
-                RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 9, 5),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]').terms), 0x0000000000000080, 5, 11),
-                RASOperatorMixed(only((9 * c[3, 1 // 2]).terms), 0x0000000000000080, 11, 5),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]').terms), 0x0000000000000000, 3, 1),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]).terms), 0x0000000000000000, 1, 3),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]').terms), 0x0000000000000000, 5, 1),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]).terms), 0x0000000000000000, 1, 5),
-                RASOperatorMixed(only((30 * c[4, -1 // 2]').terms), 0x0000000000000000, 6, 2),
-                RASOperatorMixed(only((30 * c[4, -1 // 2]).terms), 0x0000000000000000, 2, 6),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]').terms), 0x0000000000000000, 9, 2),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]).terms), 0x0000000000000000, 2, 9),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]').terms), 0x0000000000000000, 10, 3),
-                RASOperatorMixed(only((-30 * c[4, 1 // 2]).terms), 0x0000000000000000, 3, 10),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]').terms), 0x0000000000000000, 8, 4),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]).terms), 0x0000000000000000, 4, 8),
-                RASOperatorMixed(only((30 * c[4, 1 // 2]').terms), 0x0000000000000000, 11, 4),
-                RASOperatorMixed(only((30 * c[4, 1 // 2]).terms), 0x0000000000000000, 4, 11),
-                RASOperatorMixed(
-                    only((-30 * c[4, -1 // 2]').terms), 0x0000000000000000, 10, 5
-                ),
-                RASOperatorMixed(only((-30 * c[4, -1 // 2]).terms), 0x0000000000000000, 5, 10),
-            ]
-            @test typeof(H1) == typeof(H2)
-            @test H1 == H2
-            @test H1.opbit == H_bit
-            @test H1.opmix == H_mix
-            @test H1.zero == 2 * 15
-            @test H1.one == one
-            @test H1.two == two
-            @test H1.nbit == 4
-            @test H1.nfilled == 1
-            @test H1.nempty == 1
-            @test H1.excitation == 2
+            @test H0.opbit == H_ref0
+            @test H0.nbit == 2
+            @test H0.nfilled == 2
+            @test H0.nempty == 2
 
-            # more sites in bit component
-            U1 = 4.0
-            μ1 = U1 / 2
-            fs = FockSpace(Orbitals(6), FermionicSpin(1 // 2))
-            n = occupations(fs)
-            H_int = U1 * n[1, -1 // 2] * n[1, 1 // 2]
-            Δ = hybridization_function_bethe_simple(11)
-            H_nat, n_occ1 = natural_impurity_orbital(arrowhead_matrix(Δ))
-            H = natural_impurity_orbital_ras_operator(H_nat, H_int, -μ1, fs, n_occ1, 2, 2, 2)
-            @test length(H.opbit.terms) == 1 + 2 * 6 + 4 * 7
-            @test length(H.opmix) == 96 # didn't calculate myself
-            @test H.zero isa Float64
-            @test size(H.one) == (2 * 6, 2 * 6)
-            @test size(H.two) == (binomial(2 * 6, 2), binomial(2 * 6, 2))
 
-            # no site of each chain in bit component
-            # natural_impurity_orbital_ras_operator_zero
-            fs = FockSpace(Orbitals(4), FermionicSpin(1 // 2)) # too many Orbitals on purpose
-            n = occupations(fs)
-            H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = RAS_DMFT._natural_impurity_orbital_ras_operator_zero(H_nat1, H_int, -μ, fs, n_occ, 2)
-            H2 = RAS_DMFT._natural_impurity_orbital_ras_operator_zero(H_nat2, H_int, -μ, fs, n_occ, 2)
-            @test typeof(H1) == typeof(H2)
-            @test H1 == H2
+            # L_v = L_c = 1
+            H_ref = H_int
+            for σ in axes(c, 2)
+                H_ref += ϵ_imp * n[1, σ]       # i
+                H_ref += 2.0 * n[2, σ]         # b
+                H_ref += hop(c, σ, 1, 2, 1.0)  # i ↔ b
+                H_ref += -7.0 * n[3, σ]        # v_1
+                H_ref += hop(c, σ, 1, 3, 3.0)  # i ↔ v_1
+                H_ref += hop(c, σ, 2, 3, 5.0)  # b ↔ v_1
+                H_ref += 10.0 * n[4, σ]        # c_1
+                H_ref += hop(c, σ, 1, 4, 4.0)  # i ↔ c_1
+                H_ref += hop(c, σ, 2, 4, 6.0)  # b ↔ c_1
+            end
+            for p in 0:2
+                H = natural_impurity_orbital_ras_operator(
+                    H_nat, H_int, ϵ_imp, fs, 1, 1, p
+                )
+                @test H.opbit == H_ref
+                @test H.nbit == 4
+                @test H.nfilled == 1
+                @test H.nempty == 1
+                @test H.excitation == p
+            end
 
-            c = annihilators(fs)
-            n = occupations(fs)
-            H_bit =
-                # impurity
-                U * n[1, 1 // 2] * n[1, -1 // 2] +
-                -38 * n[1, -1 // 2] +
-                -38 * n[1, 1 // 2] +
-                # mirror site
-                22 * n[2, -1 // 2] +
-                22 * n[2, 1 // 2] +
-                # hopping i <-> b
-                4 * c[1, -1 // 2]' * c[2, -1 // 2] +
-                4 * c[2, -1 // 2]' * c[1, -1 // 2] +
-                4 * c[1, 1 // 2]' * c[2, 1 // 2] +
-                4 * c[2, 1 // 2]' * c[1, 1 // 2]
-            zero = 2 * (8 + 15)
-            a = repeat([-8, -15, 29, 36], 2) .+ zero
-            b = [9, 0, 30, 0, 9, 0, 30]
-            one = SymTridiagonal(a, b)
+            # a realistic bath still gives a symmetric bit component
+            H_bethe = natural_impurity_orbital(hybridization_function_bethe_simple(11))
+            fs6 = FockSpace(Orbitals(6), FermionicSpin(1 // 2))
+            n6 = occupations(fs6)
+            H6 = natural_impurity_orbital_ras_operator(
+                H_bethe, U * n6[1, 1 // 2] * n6[1, -1 // 2], ϵ_imp, fs6, 2, 2, 2
+            )
+            @test issymmetric(H6.opbit)
 
-            @test H1.opbit == H_bit
-            @test H1.zero === zero
-            @test H1.one == one
-            @test typeof(H1.two) === SparseMatrixCSC{Int, Int}
-            @test size(H1.two) == (binomial(2 * 4, 2), binomial(2 * 4, 2))
-            @test H1.nbit === 2
-            @test H1.nfilled === 2
-            @test H1.nempty === 2
-            @test H1.excitation === 2
+            # invalid n_v_bit, n_c_bit, excitation
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, H_int, ϵ_imp, fs, 0, 1, 1
+            )
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, H_int, ϵ_imp, fs, 1, 0, 1
+            )
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, H_int, ϵ_imp, fs, 3, 1, 1
+            )
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, H_int, ϵ_imp, fs, 1, 3, 1
+            )
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, H_int, ϵ_imp, fs, 1, 1, -1
+            )
         end # RASOperator
     end # operator
 end # natural impurity orbitals
