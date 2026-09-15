@@ -66,8 +66,9 @@ export
     merge_small_weight!,
     moment,
     moments,
-    natural_orbital_operator,
-    natural_orbital_ras_operator,
+    natural_impurity_orbital,
+    natural_impurity_orbital_operator,
+    natural_impurity_orbital_ras_operator,
     quasiparticle_weight,
     quasiparticle_weight_optimum_regularization,
     read_hdf5,
@@ -81,7 +82,6 @@ export
     spectral_function_loggaussian,
     temperature_kondo,
     to_grid,
-    to_natural_orbitals,
     tridiagonal_matrix,
     update_hybridization_function,
     weight,
@@ -98,7 +98,7 @@ include("Poles/polescontinuedfraction.jl")
 include("Poles/polescontinuedfractionblock.jl")
 include("Poles/conversion.jl")
 include("io.jl")
-include("natural_orbitals.jl")
+include("natural_impurity_orbital.jl")
 include("wavefunctions.jl")
 include("grid.jl")
 include("orthogonalization.jl")

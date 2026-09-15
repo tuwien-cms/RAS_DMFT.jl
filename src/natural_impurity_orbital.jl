@@ -1,12 +1,12 @@
 """
-    to_natural_orbitals(H::AbstractMatrix, ϵ::Real=1e-8)
+    natural_impurity_orbital(H::AbstractMatrix, ϵ::Real=1e-8)
 
-Transforms a single particle Hamiltonian `H` to natural orbital basis.
+Transforms a single particle Hamiltonian `H` to natural impurity orbital basis.
 
 `H[1,1]` is the onsite energy of the impurity.
 States with energies `E ∈ (-ϵ, ϵ)` are considered degenerate.
 """
-function to_natural_orbitals(H::AbstractMatrix{<:Real}, ϵ::Real = 1.0e-8)
+function natural_impurity_orbital(H::AbstractMatrix{<:Real}, ϵ::Real = 1.0e-8)
     ishermitian(H) || throw(ArgumentError("`H` not Hermitian"))
     E, T = LAPACK.syev!('V', 'U', copy(H))
     n_lower = count(<=(-ϵ), E)
@@ -80,7 +80,7 @@ function to_natural_orbitals(H::AbstractMatrix{<:Real}, ϵ::Real = 1.0e-8)
 end
 
 """
-    natural_orbital_operator(
+    natural_impurity_orbital_operator(
         H_nat::Matrix{T},
         H_int::Operator,
         ϵ_imp::T,
@@ -90,10 +90,10 @@ end
         n_c_bit::Int=1,
     ) where {T<:Real}
 
-Convert natural orbital Hamiltonian `H_nat` to `Operator`.
+Convert natural impurity orbital Hamiltonian `H_nat` to `Operator`.
 
 # Arguments
-- `H_nat::Matrix{T}`: natural orbital Hamiltonian
+- `H_nat::Matrix{T}`: natural impurity orbital Hamiltonian
 - `H_int::Operator`: interacting Hamiltonian
 - `U::T`: Coulomb repulsion on impurity
 - `ϵ_imp::T`: on-site energy of impurity
@@ -102,7 +102,7 @@ Convert natural orbital Hamiltonian `H_nat` to `Operator`.
 - `n_v_bit::Int=1`: number of valence bath sites in bit component
 - `n_c_bit::Int=1`: number of conduction bath sites in bit component
 """
-function natural_orbital_operator(
+function natural_impurity_orbital_operator(
         H_nat::Matrix{T},
         H_int::Operator,
         ϵ_imp::T,
@@ -183,7 +183,7 @@ function natural_orbital_operator(
 end
 
 """
-    natural_orbital_ras_operator(
+    natural_impurity_orbital_ras_operator(
         H_nat::Matrix{T},
         H_int::Operator,
         ϵ_imp::T,
@@ -194,10 +194,10 @@ end
         excitation::Int=1,
     ) where {T<:Real}
 
-Convert natural orbital Hamiltonian `H_nat` to `RASOperator`.
+Convert natural impurity orbital Hamiltonian `H_nat` to `RASOperator`.
 
 # Arguments
-- `H_nat::Matrix{T}`: natural orbital Hamiltonian
+- `H_nat::Matrix{T}`: natural impurity orbital Hamiltonian
 - `H_int::Operator`: interacting Hamiltonian
 - `ϵ_imp::T`: on-site energy of impurity
 - `fock_space::FockSpace`: Fock Space used for the system
@@ -208,7 +208,7 @@ Convert natural orbital Hamiltonian `H_nat` to `RASOperator`.
 
 See also `RASOperator`.
 """
-function natural_orbital_ras_operator(
+function natural_impurity_orbital_ras_operator(
         H_nat::Matrix{T},
         H_int::Operator,
         ϵ_imp::T,
@@ -219,7 +219,7 @@ function natural_orbital_ras_operator(
         excitation::Int = 1,
     ) where {T <: Real}
     # Check if function for zero chain length should be used.
-    n_v_bit === n_c_bit === 0 && return _natural_orbital_ras_operator_zero(
+    n_v_bit === n_c_bit === 0 && return _natural_impurity_orbital_ras_operator_zero(
         H_nat, H_int, ϵ_imp, fock_space, n_occ, excitation
     )
     # check input
@@ -267,8 +267,8 @@ function natural_orbital_ras_operator(
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, excitation)
 end
 
-# Same as `natural_orbital_operator` but with `n_v_bit === n_c_bit === 0`.
-function _natural_orbital_ras_operator_zero(
+# Same as `natural_impurity_orbital_operator` but with `n_v_bit === n_c_bit === 0`.
+function _natural_impurity_orbital_ras_operator_zero(
         H_nat::Matrix{T},
         H_int::Operator,
         ϵ_imp::T,

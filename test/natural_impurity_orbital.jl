@@ -5,11 +5,11 @@ using RAS_DMFT
 using SparseArrays
 using Test
 
-@testset "natural orbitals" begin
+@testset "natural impurity orbitals" begin
     @testset "matrix transformation" begin
         Δ = hybridization_function_bethe_simple(11)
         m = arrowhead_matrix(Δ)
-        H, n_occ = to_natural_orbitals(m)
+        H, n_occ = natural_impurity_orbital(m)
 
         @test n_occ === 6
         @test size(H) === (12, 12)
@@ -33,26 +33,26 @@ using Test
 
         Δ = hybridization_function_bethe_simple(301)
         m = arrowhead_matrix(Δ)
-        H, n_occ = to_natural_orbitals(m)
+        H, n_occ = natural_impurity_orbital(m)
         @test n_occ === 151
         E = eigvals(H)
         @test norm(E[1:151] + reverse(E[152:end])) < sqrt(eps())
 
         # non-Hermitian matrix
         m = rand(10, 10)
-        @test_throws ArgumentError to_natural_orbitals(m)
+        @test_throws ArgumentError natural_impurity_orbital(m)
 
         # complex matrix
-        @test !hasmethod(to_natural_orbitals, Tuple{Matrix{ComplexF64}})
+        @test !hasmethod(natural_impurity_orbital, Tuple{Matrix{ComplexF64}})
 
         # sites with zero hybridization, Löwdin must not return negative eigenvalues
         Δ = hybridization_function_bethe_grid(range(-2, 2; length = 31))
-        to_natural_orbitals(arrowhead_matrix(Δ))
+        natural_impurity_orbital(arrowhead_matrix(Δ))
 
         # multiply degenerate zero-energy states
         U = 0.5 * [1 1 1 1; 1 1 -1 -1; 1 -1 1 -1; 1 -1 -1 1]
         H0 = Diagonal([-2.0, 0.0, 0.0, 2.0])
-        H_nat, n_occ = to_natural_orbitals(U * H0 * U')
+        H_nat, n_occ = natural_impurity_orbital(U * H0 * U')
         @test n_occ === 2
         @test ishermitian(H_nat)
         @test sort(eigvals(H_nat)) ≈ sort(eigvals(H0)) atol = 1.0e3 * eps()
@@ -85,8 +85,8 @@ using Test
             fs = FockSpace(Orbitals(12), FermionicSpin(1 // 2))
             n = occupations(fs)
             H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = natural_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1)
-            H2 = natural_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1)
+            H1 = natural_impurity_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1)
+            H2 = natural_impurity_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1)
             @test H1 == H2
 
             c = annihilators(fs)
@@ -145,8 +145,8 @@ using Test
             @test H1 == H3
 
             # raise sites in bit component
-            H1 = natural_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 2, 2)
-            H2 = natural_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 2, 2)
+            H1 = natural_impurity_orbital_operator(H_nat1, H_int, -μ, fs, n_occ, 2, 2)
+            H2 = natural_impurity_orbital_operator(H_nat2, H_int, -μ, fs, n_occ, 2, 2)
             @test H1 == H2
             H3 =
                 # impurity
@@ -201,7 +201,7 @@ using Test
             @test H1 == H3
 
             # non-Hermitian
-            @test_throws ArgumentError natural_orbital_operator(
+            @test_throws ArgumentError natural_impurity_orbital_operator(
                 rand(Int, 6, 6), H_int, -μ, fs, n_occ, 1, 1
             )
         end # Operator
@@ -211,8 +211,8 @@ using Test
             fs = FockSpace(Orbitals(4), FermionicSpin(1 // 2))
             n = occupations(fs)
             H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = natural_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 0)
-            H2 = natural_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 0)
+            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 0)
+            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 0)
             @test typeof(H1) == typeof(H2)
             @test H1 == H2
 
@@ -269,8 +269,8 @@ using Test
             a = repeat([30 - 15, 30 + 36], 2)
             b = zeros(Int, 3)
             one = SymTridiagonal(a, b)
-            H1 = natural_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 1)
-            H2 = natural_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 1)
+            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 1)
+            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 1)
             H_mix = [
                 RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 1, 2),
                 RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 2, 1),
@@ -306,8 +306,8 @@ using Test
                     ]
                 ),
             )
-            H1 = natural_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 2)
-            H2 = natural_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 2)
+            H1 = natural_impurity_orbital_ras_operator(H_nat1, H_int, -μ, fs, n_occ, 1, 1, 2)
+            H2 = natural_impurity_orbital_ras_operator(H_nat2, H_int, -μ, fs, n_occ, 1, 1, 2)
             H_mix = [
                 RASOperatorMixed(only((9 * c[3, -1 // 2]').terms), 0x0000000000000008, 1, 2),
                 RASOperatorMixed(only((9 * c[3, -1 // 2]).terms), 0x0000000000000008, 2, 1),
@@ -363,8 +363,8 @@ using Test
             n = occupations(fs)
             H_int = U1 * n[1, -1 // 2] * n[1, 1 // 2]
             Δ = hybridization_function_bethe_simple(11)
-            H_nat, n_occ1 = to_natural_orbitals(arrowhead_matrix(Δ))
-            H = natural_orbital_ras_operator(H_nat, H_int, -μ1, fs, n_occ1, 2, 2, 2)
+            H_nat, n_occ1 = natural_impurity_orbital(arrowhead_matrix(Δ))
+            H = natural_impurity_orbital_ras_operator(H_nat, H_int, -μ1, fs, n_occ1, 2, 2, 2)
             @test length(H.opbit.terms) == 1 + 2 * 6 + 4 * 7
             @test length(H.opmix) == 96 # didn't calculate myself
             @test H.zero isa Float64
@@ -372,12 +372,12 @@ using Test
             @test size(H.two) == (binomial(2 * 6, 2), binomial(2 * 6, 2))
 
             # no site of each chain in bit component
-            # natural_orbital_ras_operator_zero
+            # natural_impurity_orbital_ras_operator_zero
             fs = FockSpace(Orbitals(4), FermionicSpin(1 // 2)) # too many Orbitals on purpose
             n = occupations(fs)
             H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-            H1 = RAS_DMFT._natural_orbital_ras_operator_zero(H_nat1, H_int, -μ, fs, n_occ, 2)
-            H2 = RAS_DMFT._natural_orbital_ras_operator_zero(H_nat2, H_int, -μ, fs, n_occ, 2)
+            H1 = RAS_DMFT._natural_impurity_orbital_ras_operator_zero(H_nat1, H_int, -μ, fs, n_occ, 2)
+            H2 = RAS_DMFT._natural_impurity_orbital_ras_operator_zero(H_nat2, H_int, -μ, fs, n_occ, 2)
             @test typeof(H1) == typeof(H2)
             @test H1 == H2
 
@@ -412,4 +412,4 @@ using Test
             @test H1.excitation === 2
         end # RASOperator
     end # operator
-end # natural orbitals
+end # natural impurity orbitals
