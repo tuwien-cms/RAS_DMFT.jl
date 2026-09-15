@@ -142,6 +142,11 @@ The basis is built from the mean-field reference ``G(z) = 1/(z - ϵ_mf - Δ(z))`
 Weight within `tol` of zero is shared evenly between valence and conduction sites.
 """
 function natural_impurity_orbital(Δ::PolesSum, ϵ_mf::Real; tol::Real = 1.0e-8)
+    tol_weight = 1000 * eps(float(eltype(Δ))) * moment(Δ, 0)
+    all(>(tol_weight), weights(Δ))::Bool || throw(
+        ArgumentError("hybridization contains negligible or negative weight")
+    )
+
     # Mean-field Green's function on eigenbasis
     H = arrowhead_matrix(Δ)
     H[1, 1] = ϵ_mf

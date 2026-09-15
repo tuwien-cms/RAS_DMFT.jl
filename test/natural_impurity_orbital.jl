@@ -260,6 +260,18 @@ using Test
             @test abs(H_nat.b_c) ≈ abs(H_nat.i_v) atol = 1.0e-11
         end # Bethe 301
 
+        @testset "weight validation" begin
+            # Poles without hybridization do not couple to the impurity.
+            Δ = hybridization_function_bethe_grid(range(-2, 2; length = 31))
+            @test count(iszero, weights(Δ)) != 0
+            @test_throws ArgumentError natural_impurity_orbital(Δ, 0)
+            @test size(natural_impurity_orbital(remove_zero_weight(Δ), 0), 1) == 16
+
+            # negative weight has no amplitude
+            @test_throws ArgumentError natural_impurity_orbital(
+                PolesSum([-1.0, 1.0], [0.25, -0.1]), 0
+            )
+        end # weight validation
 
         @testset "off half filling" begin
             # Same Δ as the PHS metal, so `ϵ_mf` is the only asymmetry.
