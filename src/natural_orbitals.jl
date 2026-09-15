@@ -51,14 +51,14 @@ function to_natural_orbitals(H::AbstractMatrix{<:Real}, ϵ::Real = 1.0e-8)
     _lowdin!(base_occ)
     h = base_occ' * H * base_occ
 
-    a_occ, b_occ, _ = sytrd!('L', h)
+    _, _, a_occ, b_occ = LAPACK.hetrd!('L', h)
 
     # Löwdin on conduction states
     base_emp[:, 1] .= u
     _lowdin!(base_emp)
     h = base_emp' * H * base_emp
 
-    a_emp, b_emp, _ = sytrd!('L', h)
+    _, _, a_emp, b_emp = LAPACK.hetrd!('L', h)
 
     push!(b_occ, 0.0)
     a = vcat(a_occ, a_emp)

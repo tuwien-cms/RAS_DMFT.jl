@@ -68,7 +68,6 @@ export
     moments,
     natural_orbital_operator,
     natural_orbital_ras_operator,
-    orgtr!,
     quasiparticle_weight,
     quasiparticle_weight_optimum_regularization,
     read_hdf5,
@@ -80,7 +79,6 @@ export
     shift_spectrum!,
     slater_start,
     spectral_function_loggaussian,
-    sytrd!,
     temperature_kondo,
     to_grid,
     to_natural_orbitals,
@@ -100,7 +98,6 @@ include("Poles/polescontinuedfraction.jl")
 include("Poles/polescontinuedfractionblock.jl")
 include("Poles/conversion.jl")
 include("io.jl")
-include("sytrd.jl")
 include("natural_orbitals.jl")
 include("wavefunctions.jl")
 include("grid.jl")
