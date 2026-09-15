@@ -27,15 +27,32 @@ end
 
 """
     init_system(
-        Δ::PolesSum, H_int::Operator, ϵ_imp::Real, L_v::Int, L_c::Int, p::Int, var::Real
+        Δ::PolesSum,
+        H_int::Operator,
+        ϵ_imp::Real,
+        ϵ_mf::Real,
+        L_v::Int,
+        L_c::Int,
+        p::Int,
+        var::Real,
     )
 
 Return Hamiltonian, ground state energy, and ground state.
+
+`ϵ_imp` is the bare impurity level entering the Hamiltonian, `ϵ_mf` the mean-field
+level defining the basis, see [`natural_impurity_orbital`](@ref).
 """
 function init_system(
-        Δ::PolesSum, H_int::Operator, ϵ_imp::Real, L_v::Int, L_c::Int, p::Int, var::Real
+        Δ::PolesSum,
+        H_int::Operator,
+        ϵ_imp::Real,
+        ϵ_mf::Real,
+        L_v::Int,
+        L_c::Int,
+        p::Int,
+        var::Real,
     )
-    H_nat = natural_impurity_orbital(Δ)
+    H_nat = natural_impurity_orbital(Δ, ϵ_mf)
     n_bit, V_v, V_c = get_RAS_parameters(size(H_nat, 1), n_valence(H_nat), L_c, L_v)
     fs = FockSpace(Orbitals(n_bit), FermionicSpin(1 // 2))
     H = natural_impurity_orbital_ras_operator(H_nat, H_int, ϵ_imp, fs, L_v, L_c, p)

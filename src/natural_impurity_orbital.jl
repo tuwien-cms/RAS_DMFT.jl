@@ -133,16 +133,18 @@ end
 Base.size(H_nat::NaturalImpurityOrbital, d::Integer) = d <= 2 ? size(H_nat)[d] : 1
 
 """
-    natural_impurity_orbital(Δ::PolesSum; tol::Real = 1.0e-8)
+    natural_impurity_orbital(Δ::PolesSum, ϵ_mf::Real; tol::Real = 1.0e-8)
 
-Transform the hybridization function `Δ` to the natural impurity orbital basis.
+Transform the hybridization function `Δ` and mean-field impurity energy `ϵ_mf` to
+the natural impurity orbital basis.
 
-The basis is built from the reference ``G(z) = 1/(z - Δ(z))``.
+The basis is built from the mean-field reference ``G(z) = 1/(z - ϵ_mf - Δ(z))``.
 Weight within `tol` of zero is shared evenly between valence and conduction sites.
 """
-function natural_impurity_orbital(Δ::PolesSum; tol::Real = 1.0e-8)
-    # Green's function on eigenbasis
+function natural_impurity_orbital(Δ::PolesSum, ϵ_mf::Real; tol::Real = 1.0e-8)
+    # Mean-field Green's function on eigenbasis
     H = arrowhead_matrix(Δ)
+    H[1, 1] = ϵ_mf
     locs, V = eigen(Symmetric(H))
     amps = view(V, 1, :)
 

@@ -26,7 +26,7 @@ using Test
     # only interacting part
     H_int = U * n[1, 1 // 2] * n[1, -1 // 2]
     q_dag = H_int * d_dag - d_dag * H_int  # q_↓^† = [H_int, d^†]
-    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, L_v, L_c, p, var)
+    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, 0, L_v, L_c, p, var)
     O_Σ_H = q_dag' * d_dag + d_dag * q_dag'
     Σ_H = dot(ψ0, O_Σ_H, ψ0)
 

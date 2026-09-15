@@ -30,16 +30,29 @@ using Test
         p = 2
         var = eps()
 
-        E0_target = -21.527949990417255 # target ground state energy
+        E0_target = -21.527949990415227 # target ground state energy
         Δ = hybridization_function_bethe_simple(n_bath)
         fs = FockSpace(Orbitals(2 + L_v + L_c), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
-        H, E0, ψ0 = init_system(Δ, H_int, -μ, L_v, L_c, p, eps())
+        H, E0, ψ0 = init_system(Δ, H_int, -μ, 0, L_v, L_c, p, var)
         Hψ = H * ψ0
         variance = Hψ ⋅ Hψ
         @test variance < var
         @test E0 ≈ E0_target rtol = 2.0e-13
+
+        # no PHS by setting ϵ_mf ≠ 0
+        H_p, E0_p, ψ_p = init_system(Δ, H_int, -μ, 0.5, L_v, L_c, p, var)
+        Hψp = H_p * ψ_p
+        variance_plus = Hψp ⋅ Hψp
+        @test variance_plus < var
+        H_m, E0_m, ψ_m = init_system(Δ, H_int, -μ, -0.5, L_v, L_c, p, var)
+        Hψm = H_m * ψ_m
+        variance_minus = Hψm ⋅ Hψm
+        @test variance_minus < var
+        @test E0_p ≈ E0_m rtol = 1.0e-13
+        # shift destroys PHS
+        @test !isapprox(E0_p, E0; rtol = 1.0e-9)
     end # init system
 
     @testset "Kondo temperature" begin

@@ -115,8 +115,11 @@ remove_zero_weight!(Δ0)
 # ### Ground state
 # We can then calculate the ground state
 # up to a user-given variance of the Hamiltonian ``\mathrm{var}(H)``.
+# Next to the bare level ``ϵ_\mathrm{imp}`` entering the Hamiltonian,
+# the mean-field level ``ϵ_\mathrm{mf}`` selects the natural impurity orbital basis.
+# Both vanish here, because the system is particle-hole symmetric at half filling.
 var = 1.0e-10
-H, E0, ψ0 = init_system(Δ0, H_int, ϵ_imp, L, L, p, var);
+H, E0, ψ0 = init_system(Δ0, H_int, ϵ_imp, 0, L, L, p, var);
 # Given our ground state, we can calculate expectation values with `LinearAlgebra.dot`.
 dot(ψ0, d_occ, ψ0) # expectation value
 Σ_H = dot(ψ0, O_Σ_H, ψ0) # Hartree term, should be U/2 = 1.0

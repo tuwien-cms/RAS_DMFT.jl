@@ -124,7 +124,7 @@ using Test
     @testset "transformation" begin
         @testset "PHS metal" begin
             Δ = PolesSum([-2.0, -1.0, 0.0, 1.0, 2.0], [0.09, 0.09, 0.1, 0.09, 0.09])
-            H_nat = natural_impurity_orbital(Δ)
+            H_nat = natural_impurity_orbital(Δ, 0)
             M = Matrix(H_nat)
             E = eigvals(Symmetric(arrowhead_matrix(Δ)))
             E_ib = eigvals(Symmetric(H_nat.H_ib))
@@ -159,7 +159,7 @@ using Test
 
         @testset "PHS insulator" begin
             Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], fill(0.09, 4))
-            H_nat = natural_impurity_orbital(Δ)
+            H_nat = natural_impurity_orbital(Δ, 0)
             M = Matrix(H_nat)
             E = eigvals(Symmetric(arrowhead_matrix(Δ)))
             E_ib = eigvals(Symmetric(H_nat.H_ib))
@@ -198,7 +198,7 @@ using Test
 
         @testset "no PHS" begin
             Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], [0.09, 0.04, 0.16, 0.09])
-            H_nat = natural_impurity_orbital(Δ)
+            H_nat = natural_impurity_orbital(Δ, 0)
             M = Matrix(H_nat)
             E = eigvals(Symmetric(arrowhead_matrix(Δ)))
             E_ib = eigvals(Symmetric(H_nat.H_ib))
@@ -227,7 +227,7 @@ using Test
             # Diagonalizing 302 sites is less accurate than the small systems
             # above, so the symmetries only hold to a looser tolerance.
             Δ = hybridization_function_bethe_simple(301)
-            H_nat = natural_impurity_orbital(Δ)
+            H_nat = natural_impurity_orbital(Δ, 0)
             M = Matrix(H_nat)
             E = eigvals(Symmetric(arrowhead_matrix(Δ)))
             E_ib = eigvals(Symmetric(H_nat.H_ib))
@@ -261,10 +261,34 @@ using Test
         end # Bethe 301
 
 
+        @testset "off half filling" begin
+            # Same Δ as the PHS metal, so `ϵ_mf` is the only asymmetry.
+            Δ = PolesSum([-2.0, -1.0, 0.0, 1.0, 2.0], [0.09, 0.09, 0.1, 0.09, 0.09])
+            ϵ_mf = 0.75
+            A = arrowhead_matrix(Δ)
+            A[1, 1] = ϵ_mf
+            H_nat = natural_impurity_orbital(Δ, ϵ_mf)
+            H_phs = natural_impurity_orbital(Δ, 0)
+            M = Matrix(H_nat)
+            E = eigvals(Symmetric(A))
+            E_nat = eigvals(Symmetric(M))
+
+            # same eigenvalues, nothing shared, chains unchanged in length
+            @test E_nat ≈ E atol = 1.0e-13
+            @test size(M, 1) == length(Δ) + 1
+            @test n_valence(H_nat) == n_valence(H_phs)
+            @test n_conduction(H_nat) == n_conduction(H_phs)
+            # i keeps the mean-field level, b is not at Fermi level anymore
+            @test H_nat.H_ib[1, 1] ≈ ϵ_mf atol = 1.0e-13
+            @test !isapprox(H_nat.H_ib[2, 2], 0; atol = 1.0e-13)
+            # the chains are mirror images only without the shift
+            @test !isapprox(H_nat.e_v, -H_nat.e_c; atol = 1.0e-13)
+            @test !isapprox(H_nat.t_v, -H_nat.t_c; atol = 1.0e-13)
+        end # off half filling
 
         @testset "regression values" begin
             Δ = PolesSum([-2.0, -1.0, 1.0, 2.0], [0.09, 0.04, 0.16, 0.09])
-            H_nat = natural_impurity_orbital(Δ)
+            H_nat = natural_impurity_orbital(Δ, 0)
             @test H_nat.H_ib[1, 1] ≈ 0 atol = 1.0e-15
             @test H_nat.H_ib[2, 1] ≈ -0.4989095164078891 rtol = 1.0e-12
             @test H_nat.H_ib[2, 2] ≈ 1.1298453001727637 rtol = 1.0e-12
@@ -392,7 +416,7 @@ using Test
             end
 
             # a realistic bath still gives a symmetric bit component
-            H_bethe = natural_impurity_orbital(hybridization_function_bethe_simple(11))
+            H_bethe = natural_impurity_orbital(hybridization_function_bethe_simple(11), 0)
             fs6 = FockSpace(Orbitals(6), FermionicSpin(1 // 2))
             n6 = occupations(fs6)
             H6 = natural_impurity_orbital_ras_operator(

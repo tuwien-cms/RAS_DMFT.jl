@@ -30,7 +30,7 @@ using Test
     q_dag = H_int * d_dag - d_dag * H_int  # q_↓^† = [H_int, d^†]
 
     # initialize system
-    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, n_v_bit, n_c_bit, e, var)
+    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, 0, n_v_bit, n_c_bit, e, var)
 
     # Hartree term and linear shift
     O_Σ_H = q_dag' * d_dag + d_dag * q_dag'

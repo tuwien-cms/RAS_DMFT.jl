@@ -24,7 +24,7 @@ using Test
         d_dag = c[1, -1 // 2]' # d_↓^†
         q_dag = H_int * d_dag - d_dag * H_int  # q_↓^† = [H_int, d^†]
 
-        H, _, ψ0 = init_system(Δ, H_int, -μ, n_v_bit, n_c_bit, e, var)
+        H, _, ψ0 = init_system(Δ, H_int, -μ, 0, n_v_bit, n_c_bit, e, var)
         v1 = d_dag * ψ0
         v2 = q_dag * ψ0
         V0 = [v1 v2]

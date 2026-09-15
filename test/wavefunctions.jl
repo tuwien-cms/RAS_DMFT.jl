@@ -55,7 +55,7 @@ using Test
         n_kryl = 5
 
         Δ = hybridization_function_bethe_simple(n_bath)
-        H_nat = natural_impurity_orbital(Δ)
+        H_nat = natural_impurity_orbital(Δ, 0)
         n_sites = size(H_nat, 1)
         n_bit, V_v, V_c = get_RAS_parameters(n_sites, n_valence(H_nat), L_c, L_v)
 

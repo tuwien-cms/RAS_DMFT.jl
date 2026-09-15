@@ -25,7 +25,7 @@ using Test
     q_dag = H_int * d_dag - d_dag * H_int  # q_↓^† = [H_int, d^†]
     O = [d_dag, q_dag]
 
-    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, n_v_bit, n_c_bit, p, var)
+    H, _, ψ0 = init_system(Δ0, H_int, ϵ_imp, 0, n_v_bit, n_c_bit, p, var)
 
     @testset "Lanczos" begin
         # G+
