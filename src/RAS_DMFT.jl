@@ -1,6 +1,6 @@
 module RAS_DMFT
 
-using Distributions: Normal, Semicircle, cdf, pdf, quantile
+using Distributions: Normal, Semicircle, cdf, pdf
 using Fermions
 using Fermions.Bits
 using Fermions.Lanczos
@@ -43,7 +43,6 @@ export
     flip_spectrum,
     flip_spectrum!,
     greens_function_bethe_analytic,
-    greens_function_bethe_equal_weight,
     greens_function_bethe_grid,
     greens_function_bethe_grid_hubbard3,
     greens_function_bethe_simple,
@@ -52,7 +51,6 @@ export
     grid_log,
     ground_state!,
     hybridization_function_bethe_analytic,
-    hybridization_function_bethe_equal_weight,
     hybridization_function_bethe_grid,
     hybridization_function_bethe_grid_hubbard3,
     hybridization_function_bethe_simple,

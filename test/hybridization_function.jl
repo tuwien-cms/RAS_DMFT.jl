@@ -103,18 +103,5 @@ using Test
             @test all(i -> i < w1, view(amplitudes(Δ), 51:251))
             @test amplitudes(Δ)[151] ≈ 0.028209464484933045 atol = eps()
         end # grid
-
-        @testset "equal weight" begin
-            @test_throws DomainError hybridization_function_bethe_equal_weight(2)
-            # D = 1
-            Δ = hybridization_function_bethe_equal_weight(101)
-            @test typeof(Δ) === PolesSum{Float64, Float64}
-            @test length(Δ) === 101
-            @test all(i -> i === 1 / sqrt(101) / 2, amplitudes(Δ))
-            @test norm(locations(Δ) + reverse(locations(Δ))) === 0.0
-            # D = 4
-            Δ = hybridization_function_bethe_equal_weight(101, 4)
-            @test all(i -> i === 2 / sqrt(101), amplitudes(Δ))
-        end # equal weight
     end # Bethe lattice
 end # hybridization

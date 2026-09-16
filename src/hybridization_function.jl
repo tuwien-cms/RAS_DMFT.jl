@@ -34,8 +34,7 @@ with half-bandwidth `D` on `n_bath` poles.
 Poles are found by diagonalizing a tridiagonal matrix with hopping ``t=D/2``.
 
 See also
-[`greens_function_bethe_grid`](@ref),
-[`hybridization_function_bethe_equal_weight`](@ref).
+[`greens_function_bethe_grid`](@ref).
 """
 function hybridization_function_bethe_simple(n_bath::Int, D::Real = 1.0)
     # Take Green's function and rescale weights by D/2.
@@ -51,8 +50,7 @@ Return the [`PolesSum`](@ref) representation of the semicircular density of stat
 with half-bandwidth `D` with poles given in `grid`.
 
 See also
-[`hybridization_function_bethe_simple`](@ref),
-[`hybridization_function_bethe_equal_weight`](@ref).
+[`hybridization_function_bethe_simple`](@ref).
 """
 function hybridization_function_bethe_grid(grid::AbstractVector{<:Real}, D::Real = 1.0)
     Δ = greens_function_bethe_grid(grid, D)
@@ -74,25 +72,6 @@ function hybridization_function_bethe_grid_hubbard3(
         grid::AbstractVector{<:Real}, U::Real = 0.0, D::Real = 1.0
     )
     Δ = greens_function_bethe_grid_hubbard3(grid, U, D)
-    rmul!(Δ, D^2 / 4)
-    return Δ
-end
-
-"""
-    hybridization_function_bethe_equal_weight(n_bath::Int, D::Real = 1.0)
-
-Return the [`PolesSum`](@ref) representation of the semicircular density of states
-with half-bandwidth `D` on `n_bath` poles.
-
-Each site has the same hybridization ``V^2``.
-
-See also
-[`hybridization_function_bethe_simple`](@ref),
-[`hybridization_function_bethe_grid`](@ref).
-"""
-function hybridization_function_bethe_equal_weight(n_bath::Int, D::Real = 1.0)
-    # Take Green's function and rescale weights by D/2.
-    Δ = greens_function_bethe_equal_weight(n_bath, D)
     rmul!(Δ, D^2 / 4)
     return Δ
 end

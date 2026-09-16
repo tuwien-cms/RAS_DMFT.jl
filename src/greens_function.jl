@@ -35,8 +35,7 @@ with half-bandwidth `D` on `n_bath` poles.
 Poles are found by diagonalizing a tridiagonal matrix with hopping ``t=D/2``.
 
 See also
-[`greens_function_bethe_grid`](@ref),
-[`greens_function_bethe_equal_weight`](@ref).
+[`greens_function_bethe_grid`](@ref).
 """
 function greens_function_bethe_simple(n_bath::Int, D::Real = 1.0)
     # check input
@@ -57,8 +56,7 @@ Return the [`PolesSum`](@ref) representation of the semicircular density of stat
 with half-bandwidth `D` with poles given in `grid`.
 
 See also
-[`greens_function_bethe_simple`](@ref),
-[`greens_function_bethe_equal_weight`](@ref).
+[`greens_function_bethe_simple`](@ref).
 """
 function greens_function_bethe_grid(grid::AbstractVector{<:Real}, D::Real = 1.0)
     # check input
@@ -90,50 +88,6 @@ function greens_function_bethe_grid_hubbard3(
         locations, x -> cdf(s, x + U / 2) + cdf(s, x - U / 2), 2
     )
     weights ./= 2 # normalize 2 distributions
-    return PolesSum(locations, weights)
-end
-
-"""
-    greens_function_bethe_equal_weight(n_bath::Int, D::Real=1.0)
-
-Return the [`PolesSum`](@ref) representation of the semicircular density of states
-with half-bandwidth `D` on `n_bath` poles.
-
-Each pole has the same hybridization ``V^2 = 1/n_b``.
-
-See also
-[`greens_function_bethe_simple`](@ref),
-[`greens_function_bethe_grid`](@ref).
-"""
-function greens_function_bethe_equal_weight(n_bath::Int, D::Real = 1.0)
-    isodd(n_bath) || throw(DomainError(n_bath, "number of bath sites must be odd"))
-
-    wgt = 1 / n_bath # weight for each pole
-    s = Semicircle(D)
-
-    # calculate only negative half, mirror due to symmetry
-    q = collect(0:wgt:0.5) # equal weight for each pole
-    v = quantile.(Semicircle(D), q) # I_l
-
-    # ϵ_l = 1/wgt ∫_{I_l} dω ω f(ω)
-    # trapezoid rule with `n_p` points
-    locations = Vector{Float64}(undef, n_bath ÷ 2)
-    n_p = 128 # arbitrary number
-    for i in eachindex(v)
-        i == length(v) && break
-        # subtract half of border values
-        α = -v[i] * pdf(s, v[i]) - v[i + 1] * pdf(s, v[i + 1])
-        α /= 2
-        for j in LinRange(v[i], v[i + 1], n_p)
-            α += j * pdf(s, j)
-        end
-        α *= (v[i + 1] - v[i]) / n_p # Δω = I_l/n_p
-        locations[i] = α
-    end
-    locations .*= n_bath # locations .*= 1/wgt
-
-    locations = [locations; 0; -reverse(locations)]
-    weights = fill(wgt, n_bath)
     return PolesSum(locations, weights)
 end
 

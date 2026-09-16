@@ -114,15 +114,6 @@ using Test
             @test amplitudes(G)[66] ≈ 0.1783752245364157 atol = 10 * eps()
             @test moment(G, 0) ≈ 1 atol = 10 * eps()
         end # grid Hubbdard III
-
-        @testset "equal weight" begin
-            @test_throws DomainError greens_function_bethe_equal_weight(2)
-            G = greens_function_bethe_equal_weight(101)
-            @test typeof(G) === PolesSum{Float64, Float64}
-            @test length(G) === 101
-            @test all(i -> i === 1 / 101, weights(G))
-            @test norm(locations(G) + reverse(locations(G))) === 0.0
-        end # equal weight
     end # Bethe lattice
 
     @testset "user supplied dispersion" begin
