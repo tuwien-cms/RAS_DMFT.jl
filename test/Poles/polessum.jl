@@ -1,3 +1,4 @@
+using Distributions: Normal, pdf
 using RAS_DMFT
 using LinearAlgebra
 using Test
@@ -410,6 +411,26 @@ using Test
             @test abs(P[2000] - 2) < 0.01 # Luttinger pinning
             @test first(P) < 1.0e-6 # decay for ω → ±∞
             @test last(P) < 1.0e-6 # decay for ω → ±∞
+
+            # a zero pole is broadened with a normalized Gaussian
+            # whose width is the smallest nonzero pole location, here σ = 1
+            G0 = PolesSum([-1.0, 0.0, 1.0], [0.25, 0.5, 0.25])
+            G1 = PolesSum([-1.0, 1.0], [0.25, 0.25])
+            gauss = 0.5 .* pdf.(Normal(0.0, 1.0), W)
+            @test spectral_function_loggaussian(G0, W, 0.2) ==
+                spectral_function_loggaussian(G1, W, 0.2) .+ gauss
+            # at ω = 0 only the Gaussian contributes
+            @test spectral_function_loggaussian(G0, 0.0, 0.2) ≈ 0.5 / sqrt(2π) atol =
+                10 * eps()
+            # a single nonzero pole suffices to set the width
+            G_edge = PolesSum([0.0, 1.0], [0.3, 0.7])
+            @test spectral_function_loggaussian(G_edge, 0.4, 0.2) ==
+                spectral_function_loggaussian(PolesSum([1.0], [0.7]), 0.4, 0.2) +
+                0.3 * pdf(Normal(0.0, 1.0), 0.4)
+            # a lone zero pole cannot be broadened
+            @test_throws ArgumentError spectral_function_loggaussian(
+                PolesSum([0.0], [1.0]), 0.5, 0.2
+            )
         end # spectral_function_loggauss
 
         @testset "to_grid" begin

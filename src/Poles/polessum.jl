@@ -249,19 +249,31 @@ b_i δ(ω - a_i) → b_i \\frac{\\mathrm{e}^{-b^2/4}}{\\sqrt{π}|a|b}
 \\exp\\left(-\\frac{\\ln^2(ω/a_i)}{b^2}\\right).
 ```
 
-If there is a pole ``a_i = 0``, it is shifted halfway between its neighbors and
-each getting half weight
+The lognormal kernel yields nothing at ``ω = 0``,
+so a pole ``a_i = 0`` is instead broadened with a Gaussian
+whose width is the resolution floor of the poles
 
 ```math
-b_i δ(ω) →
-  \\frac{b_i}{2} δ\\left(ω - \\frac{a_{i-1}}{2}\\right)
-+ \\frac{b_i}{2} δ\\left(ω - \\frac{a_{i+1}}{2}\\right).
+b_i δ(ω) → \\frac{b_i}{\\sqrt{2π} σ} \\exp\\left(-\\frac{ω^2}{2σ^2}\\right),
+\\qquad
+σ = \\min_{a_i ≠ 0} |a_i| \\,.
 ```
 """
 function spectral_function_loggaussian(P::PolesSum, ω::Real, b::Real)
     result = zero(ω)
-    iszero(ω) && return result # no weight at ω == 0
-    for (loc, w) in P
+    for i in eachindex(P)
+        loc = location(P, i)
+        w = weight(P, i)
+        if iszero(loc)
+            length(P) > 1 ||
+                throw(ArgumentError("cannot broaden a lone pole at zero"))
+            σ = min(
+                i > 1 ? abs(location(P, i - 1)) : Inf,
+                i < length(P) ? abs(location(P, i + 1)) : Inf,
+            )
+            result += w * pdf(Normal(0, σ), ω)
+            continue
+        end
         # only contribute weight if ω is on the same side of the real axis
         sign(ω) == sign(loc) || continue
         prefactor = w * exp(-b^2 / 4) / (b * abs(loc) * sqrt(π))
