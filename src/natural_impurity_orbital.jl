@@ -347,6 +347,9 @@ function natural_impurity_orbital_ras_operator(
     n_c = n_conduction(H_nat)
     n_v_bit <= n_v || throw(ArgumentError("n_v_bit too big"))
     n_c_bit <= n_c || throw(ArgumentError("n_c_bit too big"))
+    n_v_bit < n_v || n_c_bit < n_c || throw(
+        ArgumentError("no restricted active space"),
+    )
 
     # Create bit Operator
     n_bit = 2 + n_v_bit + n_c_bit
@@ -361,21 +364,28 @@ function natural_impurity_orbital_ras_operator(
     n_v_vector = n_v - n_v_bit
     n_c_vector = n_c - n_c_bit
     esite = [H_nat.e_v[(1 + n_v_bit):end]; H_nat.e_c[(1 + n_c_bit):end]]
+    # no hopping between valence/conduction chains
+    separator = (n_v_vector > 0 && n_c_vector > 0) ? [zero(T)] : T[]
     ehop = [
         H_nat.t_v[(1 + n_v_bit):end];
-        zero(T);  # no hopping between valence/conduction chains
+        separator;
         H_nat.t_c[(1 + n_c_bit):end];
     ]
 
     # Create MixedOperator
     # (i, j, amp)
-    mixed = (
-        # valence bath site
-        (2 + n_v_bit, 1, H_nat.t_v[n_v_bit]),
-        # conduction bath site
-        (2 + n_v_bit + n_c_bit, n_v_vector + 1, H_nat.t_c[n_c_bit]),
-    )
+    mixed = ()
+    if n_v_vector > 0
+        mixed = (mixed..., (2 + n_v_bit, 1, H_nat.t_v[n_v_bit]))
+    end
+    if n_c_vector > 0
+        mixed = (
+            mixed...,
+            (2 + n_v_bit + n_c_bit, n_v_vector + 1, H_nat.t_c[n_c_bit]),
+        )
+    end
 
+    @assert !isempty(mixed)  # necessary for JETLS, although guaranteed by earlier checks
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 

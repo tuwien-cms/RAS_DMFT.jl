@@ -427,6 +427,53 @@ using Test
                 @test H.excitation == p
             end
 
+            # L_v = n_v: the valence chain leaves no vector site
+            # sites [i, b, v_1, v_2, c_1]
+            fs5 = FockSpace(Orbitals(5), FermionicSpin(1 // 2))
+            c5 = annihilators(fs5)
+            n5 = occupations(fs5)
+            H_int5 = U * n5[1, 1 // 2] * n5[1, -1 // 2]
+            H_ref5 = H_int5
+            for σ in axes(c5, 2)
+                H_ref5 += ϵ_imp * n5[1, σ]       # i
+                H_ref5 += 2.0 * n5[2, σ]         # b
+                H_ref5 += hop(c5, σ, 1, 2, 1.0)  # i ↔ b
+                H_ref5 += -7.0 * n5[3, σ]        # v_1
+                H_ref5 += hop(c5, σ, 1, 3, 3.0)  # i ↔ v_1
+                H_ref5 += hop(c5, σ, 2, 3, 5.0)  # b ↔ v_1
+                H_ref5 += -8.0 * n5[4, σ]        # v_2
+                H_ref5 += hop(c5, σ, 3, 4, 9.0)  # v_1 ↔ v_2
+                H_ref5 += 10.0 * n5[5, σ]        # c_1
+                H_ref5 += hop(c5, σ, 1, 5, 4.0)  # i ↔ c_1
+                H_ref5 += hop(c5, σ, 2, 5, 6.0)  # b ↔ c_1
+            end
+            H5 = natural_impurity_orbital_ras_operator(
+                H_nat, H_int5, ϵ_imp, fs5, 2, 1, 1
+            )
+            @test H5.opbit == H_ref5
+            @test H5.nbit == 5
+            @test H5.nfilled == 0
+            @test H5.nempty == 1
+            # c_2 is the only vector site, so no valence energy is left over
+            @test H5.zero == 0.0
+            @test H5.one == SymTridiagonal([11.0, 11.0], [0.0])
+            # c_1 ↔ c_2 only, as h.c. and both spins
+            @test length(H5.opmix) == 4
+
+            # L_c = n_c: the conduction chain leaves no vector site
+            # sites [i, b, v_1, c_1, c_2]
+            H5c = natural_impurity_orbital_ras_operator(
+                H_nat, H_int5, ϵ_imp, fs5, 1, 2, 1
+            )
+            @test H5c.nbit == 5
+            @test H5c.nfilled == 1
+            @test H5c.nempty == 0
+            # v_2 is the only vector site and is filled for both spins
+            @test H5c.zero == -16.0  # 2 * e_v[2]
+            @test H5c.one == SymTridiagonal([-8.0, -8.0], [0.0])
+            # v_1 ↔ v_2 only, as h.c. and both spins
+            @test length(H5c.opmix) == 4
+
             # a realistic bath still gives a symmetric bit component
             H_bethe = natural_impurity_orbital(hybridization_function_bethe_simple(11), 0)
             fs6 = FockSpace(Orbitals(6), FermionicSpin(1 // 2))
@@ -451,6 +498,10 @@ using Test
             )
             @test_throws ArgumentError natural_impurity_orbital_ras_operator(
                 H_nat, H_int, ϵ_imp, fs, 1, 1, -1
+            )
+            # no vector component
+            @test_throws ArgumentError natural_impurity_orbital_ras_operator(
+                H_nat, U * n6[1, 1 // 2] * n6[1, -1 // 2], ϵ_imp, fs6, 2, 2, 1
             )
         end # RASOperator
     end # operator
