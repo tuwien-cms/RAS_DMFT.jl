@@ -66,36 +66,52 @@ using Test
             Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
         )
 
-        # 10 steps total
-        E0, ψ0 = ground_state!(H, ψ_start, n_kryl, 10, 0)
-        @test E0 ≈ -21.52794995443258 rtol = 2.0e-13
-        foo = H * ψ0
-        var = foo ⋅ foo
-        @test var < 3.0e-8
+        # Every restart improves the state.
+        ψ0 = ψ_start
+        E = Vector{Float64}(undef, 3)
+        var = Vector{Float64}(undef, 3)
+        for i in eachindex(E)
+            E[i], ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
+            foo = H * ψ0
+            var[i] = foo ⋅ foo
+        end
 
-        # 20 steps total
-        E0, ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
-        @test E0 ≈ -21.527949990414943 rtol = 2.0e-13
-        foo = H * ψ0
-        var = foo ⋅ foo
-        @test var < 3.0e-13
+        # the energy only decreases, by an ever smaller amount
+        @test all(<(0), E)
+        @test abs(E[3]) < abs(E[2]) < abs(E[1])
+        # the state approaches an eigenstate
+        @test var[3] < var[2] < var[1]
 
-        # 30 steps total
-        E0, ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
-        @test E0 ≈ -21.527949990415216 rtol = 2.0e-13
-        foo = H * ψ0
-        var = foo ⋅ foo
-        @test var < eps()
+        # energy and variance after 10, 20, and 30 Krylov steps
+        E_total = cumsum(E)
+        @test E_total[1] ≈ -21.52794995443258 rtol = 2.0e-13
+        @test E_total[2] ≈ -21.527949990414943 rtol = 2.0e-13
+        @test E_total[3] ≈ -21.527949990415216 rtol = 2.0e-13
+        @test var[1] < 3.0e-8
+        @test var[2] < 3.0e-13
+        @test var[3] < eps()
 
-        # calculate full variance in Wavefunction without L,p approximation
+        # variance on unrestricted space is worse
         fs = FockSpace(Orbitals(size(H_nat, 1)), FermionicSpin(1 // 2))
         n = occupations(fs)
         H_int = U * n[1, -1 // 2] * n[1, 1 // 2]
         H_wf = natural_impurity_orbital_operator(H_nat, H_int, -μ, fs, L_v, L_c)
-        Fermions.shift_spectrum!(H_wf, E0)
+        Fermions.shift_spectrum!(H_wf, E_total[3])
         ψ0_wf = Wavefunction(ψ0)
         foo = H_wf * ψ0_wf
         var = foo ⋅ foo
-        @test var < 2.0e-4
+        @test 1.0e-4 < var < 2.0e-4
+
+        # symmetric interaction U (n_↑ - 1/2) (n_↓ - 1/2)
+        # with `ϵ_imp = 0` must raise the eigenenergy by U/4
+        fs = FockSpace(Orbitals(2 + L_v + L_c), FermionicSpin(1 // 2))
+        n = occupations(fs)
+        H_int = U * (n[1, -1 // 2] - 0.5 * I) * (n[1, 1 // 2] - 0.5 * I)
+        H = natural_impurity_orbital_ras_operator(H_nat, H_int, 0.0, fs, L_v, L_c, p)
+        ψ_start = RASWavefunction_singlet(
+            Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
+        )
+        E_sym, _ = ground_state!(H, ψ_start, n_kryl, 10, 0)
+        @test E_sym - U / 4 ≈ E_total[1] rtol = 2.0e-13
     end # ground state
 end # wavefunctions

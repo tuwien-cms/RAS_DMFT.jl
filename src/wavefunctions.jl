@@ -72,6 +72,7 @@ function ground_state!(
     variance >= 0 || throw(ArgumentError("variance must be >= 0"))
 
     # initial guess
+    # `H` is shifted to keep its spectrum near zero, so `E0` sums all shifts
     ψ0 = copy(ψ_start)
     E0 = dot(ψ0, H, ψ0)
     Fermions.shift_spectrum!(H, E0)
@@ -91,8 +92,9 @@ function ground_state!(
             axpy!(F.vectors[i, 1], states[i], ψ0) # ψ0_new += c_i * ψ_i
         end
         normalize!(ψ0) # possible orthogonality loss in Lanczos
-        E0 = dot(ψ0, H, ψ0)
-        Fermions.shift_spectrum!(H, E0)
+        E_shift = dot(ψ0, H, ψ0)
+        Fermions.shift_spectrum!(H, E_shift)
+        E0 += E_shift
 
         # calculate variance
         foo = H * ψ0
@@ -103,18 +105,6 @@ function ground_state!(
             break
         elseif itr == n_max_restart
             @info "Target variance not reached. Stopped at $(var)"
-        end
-    end
-
-    # find constant term for E0
-    for t in H.opbit.terms
-        if iszero(t.mask) &&
-                iszero(t.left) &&
-                iszero(t.right) &&
-                iszero(t.change) &&
-                iszero(t.signmask)
-            E0 = -t.value
-            break
         end
     end
 
