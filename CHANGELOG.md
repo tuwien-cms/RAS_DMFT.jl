@@ -73,6 +73,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `spectral_function_loggaussian` broadens a pole at zero with a Gaussian
   instead of dropping its weight
   ([#249](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/249)) (4bd2786)
+- `find_chemical_potential` and `greens_function_local` accept a real self-energy
+  together with a complex dispersion
+  ([#250](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/250)) (19edfbd)
 
 ## [0.11.0] - 2026-08-14
 
