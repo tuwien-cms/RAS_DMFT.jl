@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (27f4c30)
 - `get_RAS_parameters` as parameters can be inferred directly
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (79cec2a)
+- `greens_function_bethe_equal_weight` and `hybridization_function_bethe_equal_weight`,
+  ([#248](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/248)) (b1278c8)
 
 ### Fixed
 
