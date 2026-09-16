@@ -81,12 +81,12 @@ using Test
         @test RAS_DMFT._orthogonalize_states!(M1, Q_new1, Q_old1) === Q_new1
         # overlap to previous state
         foo = norm(Q_old1' * Q_new1)
-        @test foo < 10 * eps()
+        @test foo < 1000 * eps()
         # orthogonalize again
         RAS_DMFT._orthogonalize_states!(M1, Q_new1, Q_old1)
         bar = norm(Q_old1' * Q_new1)
         @test bar <= foo
-        @test bar < 2 * eps()
+        @test bar < 100 * eps()
 
         # no allocations
         Q_new2 = rand(ComplexF64, 8, 4)

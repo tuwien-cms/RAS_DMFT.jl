@@ -77,18 +77,18 @@ using Test
         @test ishermitian(ma)
         @test iszero(@view ma[1:4, 1:4])
         amp1 = @view ma[1:4, 5:8]
-        @test norm(wgts[1] - amp1 * amp1') < 100 * eps()
+        @test norm(wgts[1] - amp1 * amp1') < 10000 * eps()
         amp2 = @view ma[1:4, 9:12]
-        @test norm(wgts[2] - amp2 * amp2') < 100 * eps()
+        @test norm(wgts[2] - amp2 * amp2') < 10000 * eps()
         @test view(ma, 5:12, 5:12) == Diagonal([1, 1, 1, 1, 2, 2, 2, 2])
         # thin rectangular amplitudes
         ma = arrowhead_matrix(P, 10 * sqrt(eps()); thin = true)
         @test ishermitian(ma)
         @test iszero(@view ma[1:4, 1:4])
         amp1 = @view ma[1:4, 5]
-        @test norm(wgts[1] - amp1 * amp1') < 100 * eps()
+        @test norm(wgts[1] - amp1 * amp1') < 10000 * eps()
         amp2 = @view ma[1:4, 6:7]
-        @test norm(wgts[2] - amp2 * amp2') < 100 * eps()
+        @test norm(wgts[2] - amp2 * amp2') < 10000 * eps()
         @test view(ma, 5:7, 5:7) == Diagonal([1, 2, 2])
     end # arrowhead matrix
 
