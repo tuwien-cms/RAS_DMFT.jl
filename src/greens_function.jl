@@ -168,11 +168,13 @@ function greens_function_local(
     allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
     (size(Σ_dyn) == (n_b, n_b))::Bool || throw(DimensionMismatch("matrix size of Σ_dyn does not match H_k"))
 
-    # represent dynamic part of self-energy as block arrowhead matrix
-    Σ_A = arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true)
-
     # Calculate Green's function in pole representation.
     T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))
+
+    # represent dynamic part of self-energy as block arrowhead matrix,
+    # promoted once instead of at every decomposition
+    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true))
+
     n_k = length(H_k)
     dim = size(Σ_A, 1)
     n_p = n_k * dim # total number of poles

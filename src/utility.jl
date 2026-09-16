@@ -127,8 +127,9 @@ function find_chemical_potential(
     (size(Σ_dyn) == (n_b, n_b))::Bool || throw(DimensionMismatch("size of Σ_dyn does not match H_k"))
     μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
 
-    # represent dynamic part of self-energy as block arrowhead matrix
-    Σ_A = arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true)
+    # represent dynamic part of self-energy as block arrowhead matrix,
+    T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))
+    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true))
 
     # filling for initial guesses
     n_min = _filling_mu(H_k, Σ_stat, Σ_A, μ_min)
@@ -153,6 +154,7 @@ function find_chemical_potential(
 end
 
 # Diagonalize `Σ_A` with its top-left `n_b × n_b` block replaced by `H + Σ_stat - μ * I`.
+# `Σ_A` has to hold the promoted element type of `H` and `Σ_stat`
 function _arrowhead_eigen(
         Σ_A::AbstractMatrix,
         H::AbstractMatrix,

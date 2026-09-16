@@ -167,6 +167,28 @@ using Test
             @test norm(moment(G, 0) - I) < 10 * eps()
             m1 = [-1 3; 3 -2]
             @test norm(moment(G, 1) - m1) < 100 * eps()
+
+            # a real self-energy with a complex dispersion
+            H_kc = [[1 2 + im; 2 - im 1], [3 4; 4 3]]
+            Σ_dyn_real = PolesSumBlock([-2, 3], [[1 2; 2 4], [4 2; 2 5]])
+            G = greens_function_local(H_kc, Σ_stat, Σ_dyn_real, 0)
+            # one pole per orbital and per rank of a weight, for each k-point
+            n_p = length(H_kc) * (size(Σ_dyn_real, 1) + sum(rank, weights(Σ_dyn_real)))
+            @test length(G) == n_p
+            # high-frequency expansion ``G(z) = ∑_n M_n z^{-(n + 1)}``,
+            # where the moments `Σ_n` of `Σ_dyn` enter `M_(n + 2)`
+            h = [H + Σ_stat for H in H_kc] # μ = 0
+            h_avg = sum(h) / length(h)
+            Σ_0 = moment(Σ_dyn_real, 0)
+            Σ_1 = moment(Σ_dyn_real, 1)
+            M_0 = I
+            M_1 = h_avg
+            M_2 = sum(x -> x^2, h) / length(h) + Σ_0
+            M_3 = sum(x -> x^3, h) / length(h) + h_avg * Σ_0 + Σ_0 * h_avg + Σ_1
+            @test moment(G, 0) ≈ M_0 rtol = 10 * eps()
+            @test moment(G, 1) ≈ M_1 rtol = 200 * eps()
+            @test moment(G, 2) ≈ M_2 rtol = 200 * eps()
+            @test moment(G, 3) ≈ M_3 rtol = 200 * eps()
         end # interacting
     end # user supplied dispersion
 end # Green's function
