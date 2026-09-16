@@ -70,6 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - clear `ArgumentError` from `size` on empty blocks of poles ([#236](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/236)) (105f69b)
 - `natural_impurity_orbital_ras_operator` allows zero valence or conduction vector sites,
   but not both ([#245](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/245)) (e0336a0)
+- `spectral_function_loggaussian` broadens a pole at zero with a Gaussian
+  instead of dropping its weight
+  ([#249](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/249)) (4bd2786)
 
 ## [0.11.0] - 2026-08-14
 
