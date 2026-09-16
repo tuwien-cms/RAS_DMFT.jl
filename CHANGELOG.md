@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
 - correct eigenvectors and their adjoint in the self-energy from Schur complement ([#235](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/235)) (c2ea559)
 - clear `ArgumentError` from `size` on empty blocks of poles ([#236](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/236)) (105f69b)
+- `natural_impurity_orbital_ras_operator` allows zero valence or conduction vector sites,
+  but not both ([#245](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/245)) (e0336a0)
 
 ## [0.11.0] - 2026-08-14
 
