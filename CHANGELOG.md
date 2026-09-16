@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- `discretize_similar_weight`, `discretize_to_grid` ([#225](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/225)) (b010ad3)
+- `discretize_similar_weight`, `discretize_to_grid` ([#225](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/225)) (e043ebb)
 - submodule `Debug` from the public API ([#228](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/228)) (8c953db)
 - custom LAPACK wrappers `sytrd!` and `orgtr!`
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (27f4c30)
