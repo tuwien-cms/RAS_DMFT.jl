@@ -273,6 +273,22 @@ using Test
             )
         end # weight validation
 
+        @testset "empty chain" begin
+            # `ϵ_mf` far outside the band leaves one chain empty,
+            # as the impurity and mirror site take one state each
+            Δ = PolesSum([-1.0, 1.0], [0.5, 0.5])
+            H_nat = natural_impurity_orbital(Δ, 50)
+            @test n_valence(H_nat) == 0
+            @test n_conduction(H_nat) == 1
+            @test iszero(H_nat.i_v) # nothing to couple to
+            @test iszero(H_nat.b_v)
+            H_nat = natural_impurity_orbital(Δ, -50)
+            @test n_valence(H_nat) == 1
+            @test n_conduction(H_nat) == 0
+            @test iszero(H_nat.i_c)
+            @test iszero(H_nat.b_c)
+        end # empty chain
+
         @testset "off half filling" begin
             # Same Δ as the PHS metal, so `ϵ_mf` is the only asymmetry.
             Δ = PolesSum([-2.0, -1.0, 0.0, 1.0, 2.0], [0.09, 0.09, 0.1, 0.09, 0.09])
@@ -402,6 +418,13 @@ using Test
             @test H0.nfilled == 2
             @test H0.nempty == 2
 
+            # an empty chain contributes no vector site and no mixed hopping
+            H_empty = natural_impurity_orbital(PolesSum([-1.0, 1.0], [0.5, 0.5]), 50)
+            H0 = natural_impurity_orbital_ras_operator(
+                H_empty, H_int0, ϵ_imp, fs0, 0, 0, 2
+            )
+            @test H0.nfilled == 0
+            @test H0.nempty == 1
 
             # L_v = L_c = 1
             H_ref = H_int

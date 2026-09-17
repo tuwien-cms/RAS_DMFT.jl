@@ -384,8 +384,8 @@ function natural_impurity_orbital_ras_operator(
             (2 + n_v_bit + n_c_bit, n_v_vector + 1, H_nat.t_c[n_c_bit]),
         )
     end
+    @assert !isempty(mixed) # necessary for JETLS, although guaranteed by earlier checks
 
-    @assert !isempty(mixed)  # necessary for JETLS, although guaranteed by earlier checks
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 
@@ -407,16 +407,26 @@ function _natural_impurity_orbital_ras_operator_zero(
     n_v_vector = n_valence(H_nat)
     n_c_vector = n_conduction(H_nat)
     esite = [H_nat.e_v; H_nat.e_c]
-    ehop = [H_nat.t_v; zero(T); H_nat.t_c]  # no hopping between valence/conduction chains
+    # no hopping between valence/conduction chains
+    separator = (n_v_vector > 0 && n_c_vector > 0) ? [zero(T)] : T[]
+    ehop = [H_nat.t_v; separator; H_nat.t_c]
 
     # Create MixedOperator
     # (i, j, amp)
-    mixed = (
-        (1, 1, H_nat.i_v),        # i ↔ v1
-        (2, 1, H_nat.b_v),        # b ↔ v1
-        (1, n_v_vector + 1, H_nat.i_c),  # i ↔ c1
-        (2, n_v_vector + 1, H_nat.b_c),  # b ↔ c1
-    )
+    # An empty chain has no site to hop to.
+    mixed = ()
+    if n_v_vector > 0
+        mixed = (mixed..., (1, 1, H_nat.i_v), (2, 1, H_nat.b_v)) # i, b ↔ v1
+    end
+    if n_c_vector > 0
+        mixed = (
+            mixed...,
+            (1, n_v_vector + 1, H_nat.i_c), # i ↔ c1
+            (2, n_v_vector + 1, H_nat.b_c), # b ↔ c1
+        )
+    end
+    # necessary for JETLS, although guaranteed by `natural_impurity_orbital`
+    @assert !isempty(mixed)
 
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
