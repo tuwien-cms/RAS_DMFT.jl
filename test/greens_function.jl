@@ -120,7 +120,8 @@ using Test
     @testset "user supplied dispersion" begin
         H_k = [[1 + 0im 2; 2 1], [3 4; 4 3]]
         Σ_stat = Diagonal([1, 0])
-        Σ_dyn = PolesSumBlock([-2, 3], [[0 im; -im 5], [0 0; 0 6]]) # self-energy only on [2, 2] index
+        # self-energy only on [2, 2] index
+        Σ_dyn = PolesSumBlock([-2, 3], [[0 im; -im 5], [0 0; 0 6]])
 
         @testset "non-interacting" begin
             @inferred greens_function_local(H_k, 0.5)

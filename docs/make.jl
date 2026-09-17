@@ -23,7 +23,9 @@ makedocs(;
     authors = "Frank Ebel and contributors",
     sitename = "RAS_DMFT.jl",
     format = Documenter.HTML(;
-        canonical = "https://tuwien-cms.github.io/RAS_DMFT.jl", edit_link = "main", assets = String[]
+        canonical = "https://tuwien-cms.github.io/RAS_DMFT.jl",
+        edit_link = "main",
+        assets = String[],
     ),
     pages = [
         "Home" => "index.md",

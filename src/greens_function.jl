@@ -153,7 +153,8 @@ G_\\mathrm{loc}(z) = \\frac{1}{N_k} ∑_k \\frac{1}{z + μ - H_k - Σ(z)} .
 ```
 
 # Arguments
-- `tol_location::Real = 0`: treat locations less or equal than this value in `G_loc` as degenerate
+- `tol_location::Real = 0`: treat locations less or equal than this value
+  in `G_loc` as degenerate
 - `tol_weight::Real = 0`: treat weights less or equal than this value in `Σ_dyn` as zero
 """
 function greens_function_local(
@@ -167,7 +168,8 @@ function greens_function_local(
     # check input
     n_b = LinearAlgebra.checksquare(first(H_k)) # number of bands
     allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
-    (size(Σ_dyn) == (n_b, n_b))::Bool || throw(DimensionMismatch("matrix size of Σ_dyn does not match H_k"))
+    (size(Σ_dyn) == (n_b, n_b))::Bool ||
+        throw(DimensionMismatch("matrix size of Σ_dyn does not match H_k"))
 
     # Calculate Green's function in pole representation.
     T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))

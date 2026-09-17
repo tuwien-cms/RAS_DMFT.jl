@@ -6,7 +6,9 @@ using Test
 @testset "orthogonalization" begin
     @testset "_orthonormalize_SVD" begin
         # in-place
-        q1 = RASWavefunction(Dict(zero(UInt8) => rand(5), one(UInt8) => rand(5)), 4, 1, 1, 1)
+        q1 = RASWavefunction(
+            Dict(zero(UInt8) => rand(5), one(UInt8) => rand(5)), 4, 1, 1, 1,
+        )
         q2 = RASWavefunction(Dict(zero(UInt8) => rand(5)), 4, 1, 1, 1)
         Q = [q1 q2]
         Q_new = similar(Q)
@@ -35,7 +37,9 @@ using Test
         @test ishermitian(S_sqrt)
 
         # RASWavefunction
-        q1 = RASWavefunction(Dict(zero(UInt8) => rand(5), one(UInt8) => rand(5)), 4, 1, 1, 1)
+        q1 = RASWavefunction(
+            Dict(zero(UInt8) => rand(5), one(UInt8) => rand(5)), 4, 1, 1, 1,
+        )
         v2 = RASWavefunction(Dict(zero(UInt8) => rand(5)), 4, 1, 1, 1)
         Q = [q1 v2]
         @inferred RAS_DMFT._orthonormalize_SVD(Q)

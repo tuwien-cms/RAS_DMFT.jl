@@ -123,8 +123,10 @@ function find_chemical_potential(
     # check input
     n_b = size(first(H_k), 1)
     allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
-    size(Σ_stat) == (n_b, n_b) || throw(DimensionMismatch("size of Σ_stat does not match H_k"))
-    (size(Σ_dyn) == (n_b, n_b))::Bool || throw(DimensionMismatch("size of Σ_dyn does not match H_k"))
+    size(Σ_stat) == (n_b, n_b) ||
+        throw(DimensionMismatch("size of Σ_stat does not match H_k"))
+    (size(Σ_dyn) == (n_b, n_b))::Bool ||
+        throw(DimensionMismatch("size of Σ_dyn does not match H_k"))
     μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
 
     # represent dynamic part of self-energy as block arrowhead matrix,
@@ -134,8 +136,11 @@ function find_chemical_potential(
     # filling for initial guesses
     n_min = _filling_mu(H_k, Σ_stat, Σ_A, μ_min)
     n_max = _filling_mu(H_k, Σ_stat, Σ_A, μ_max)
-    n_min <= n_fill <= n_max ||
-        throw(ArgumentError("violating n(μ_min) = $(n_min) <= n_fill <= n(μ_max) = $(n_max)"))
+    n_min <= n_fill <= n_max || throw(
+        ArgumentError(
+            "violating n(μ_min) = $(n_min) <= n_fill <= n(μ_max) = $(n_max)",
+        ),
+    )
 
     # bisect chemical potential μ
     μ_new = 0.0
@@ -163,7 +168,8 @@ function _arrowhead_eigen(
         n_b::Int,
     )
     foo = copy(Σ_A)
-    view(foo, 1:n_b, 1:n_b) .= H .+ Σ_stat .- μ * one(H) # one fused broadcast, no temporaries
+    # one fused broadcast, no temporaries
+    view(foo, 1:n_b, 1:n_b) .= H .+ Σ_stat .- μ * one(H)
     return eigen!(Hermitian(foo))
 end
 

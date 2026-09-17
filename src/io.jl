@@ -64,7 +64,10 @@ function read_hdf5(
     end
 end
 
-function write_hdf5(filename::AbstractString, content::Vector{Matrix{T}}) where {T <: Number}
+function write_hdf5(
+        filename::AbstractString,
+        content::Vector{Matrix{T}},
+    ) where {T <: Number}
     n = length(content)
     h5open(filename, "w") do fid
         fid["n"] = n # store length

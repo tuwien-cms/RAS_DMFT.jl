@@ -77,7 +77,8 @@ using Test
         @test RAS_DMFT._issorted_and_unique(1:10)
         @test_throws ArgumentError RAS_DMFT._issorted_and_unique([1, 0]) # not sorted
         @test_throws ArgumentError RAS_DMFT._issorted_and_unique([0, 0, 1]) # not unique
-        @test_throws ArgumentError RAS_DMFT._issorted_and_unique([-0.0, 0.0]) # duplicate zeros
+        # duplicate zeros
+        @test_throws ArgumentError RAS_DMFT._issorted_and_unique([-0.0, 0.0])
     end # _issorted_and_unique
 
 

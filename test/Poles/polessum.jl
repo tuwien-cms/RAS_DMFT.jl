@@ -118,8 +118,8 @@ using Test
             # single point
             ω = 0.5
             σ = 1.0
-            @test evaluate_gaussian(P, ω, σ) ≈ -0.08753757822014871 - 0.6166378221821291im atol =
-                10 * eps()
+            @test evaluate_gaussian(P, ω, σ) ≈
+                -0.08753757822014871 - 0.6166378221821291im atol = 10 * eps()
             # grid
             ω = [0.1, 0.3]
             @test evaluate_gaussian(P, ω, 0.5) ==
@@ -131,8 +131,8 @@ using Test
             wgts = [0.2, 0.3, 0.5]
             P = PolesSum(locs, wgts)
             # single point
-            @test evaluate_lorentzian(P, 0.5, 1) ≈ -0.018461538461538474 - 0.4553846153846154im atol =
-                10 * eps()
+            @test evaluate_lorentzian(P, 0.5, 1) ≈
+                -0.018461538461538474 - 0.4553846153846154im atol = 10 * eps()
             # grid
             ω = [0.1, 0.3]
             @test evaluate_lorentzian(P, ω, 0.5) ==

@@ -32,7 +32,9 @@ using Test
         @test_throws DimensionMismatch PolesContinuedFractionBlock{Int, Int}(
             locs, [[1;;]], scl
         )
-        @test_throws DimensionMismatch PolesContinuedFractionBlock{Int, Int}(locs, amps, [1;;])
+        @test_throws DimensionMismatch PolesContinuedFractionBlock{Int, Int}(
+            locs, amps, [1;;],
+        )
 
         # outer constructor
         P = PolesContinuedFractionBlock(locs, amps, scl)
@@ -199,7 +201,9 @@ using Test
         end # size
 
         @testset "show" begin
-            P = PolesContinuedFractionBlock([fill(1.0, 1, 1)], Matrix{Float64}[], fill(1.0, 1, 1))
+            P = PolesContinuedFractionBlock(
+                [fill(1.0, 1, 1)], Matrix{Float64}[], fill(1.0, 1, 1),
+            )
             @test sprint(show, P) ==
                 "PolesContinuedFractionBlock{Float64, Float64} with 1 poles of size 1×1"
             locs = [[1 2; 2 3], [4 5; 5 6]]

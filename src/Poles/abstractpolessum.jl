@@ -8,7 +8,9 @@ The canonical representation requires the locations to be strictly increasing
 """
 abstract type AbstractPolesSum{A, B} <: AbstractPoles{A, B} end
 
-amplitudes(P::AbstractPolesSum, args...; kwargs...) = map(i -> amplitude(P, i, args...; kwargs...), eachindex(P))
+function amplitudes(P::AbstractPolesSum, args...; kwargs...)
+    return map(i -> amplitude(P, i, args...; kwargs...), eachindex(P))
+end
 
 """
     anderson_matrix(P::AbstractPolesSum)

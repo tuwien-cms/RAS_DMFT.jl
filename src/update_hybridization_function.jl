@@ -36,7 +36,8 @@ function update_hybridization_function(
         bar[1, 1] = Σ_H - μ + location(Δ0, i)
         loc_new[idx_low:idx_high], U = eigen!(bar)
         U = h.Q * U # transform back
-        wgt_new[idx_low:idx_high] = weight(Δ0, i) .* abs2.(view(U, 1, :)) # multiply new weights with original
+        # multiply new weights with original
+        wgt_new[idx_low:idx_high] = weight(Δ0, i) .* abs2.(view(U, 1, :))
     end
 
     return PolesSum(loc_new, wgt_new)

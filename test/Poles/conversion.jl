@@ -31,7 +31,8 @@ using Test
         B = B_0 * F.vectors[1:2, :]
         P_new = PolesSumBlock(copy(F.values), B, 50 * eps())
         @test norm(locations(P_new) - locations(P)) < 20 * eps()
-        @test all(<(50 * eps()), norm.(weights(P_new) .- weights(P))) # norm of each weight difference
+        # norm of each weight difference
+        @test all(<(50 * eps()), norm.(weights(P_new) .- weights(P)))
     end # Anderson matrix
 
     @testset "arrowhead matrix" begin
@@ -112,7 +113,9 @@ using Test
         P = PolesSumBlock([1, 2], [[1.0 0; 0 1], [0 0; 0 1]])
         PCF = PolesContinuedFractionBlock(P)
         @test scale(PCF) == Diagonal([1, sqrt(2)])
-        @test norm(tridiagonal_matrix(PCF) - [1 0 0 0; 0 1.5 0 0.5; 0 0 0 0; 0 0.5 0 1.5]) < 10 * eps()
+        @test norm(
+            tridiagonal_matrix(PCF) - [1 0 0 0; 0 1.5 0 0.5; 0 0 0 0; 0 0.5 0 1.5],
+        ) < 10 * eps()
         PS = PolesSumBlock(PCF)
         merge_degenerate_poles!(PS, 5 * eps())
         @test norm(locations(PS) - [1, 2]) < 10 * eps()

@@ -21,7 +21,10 @@ Poles with negative weight are moved into neighbors such that the zeroth and fir
 is conserved locally.
 """
 function self_energy_dyson(
-        ϵ_imp::Real, Δ0::PolesSum, G_imp::PolesSum, grid::AbstractVector{<:Real} = locations(Δ0)
+        ϵ_imp::Real,
+        Δ0::PolesSum,
+        G_imp::PolesSum,
+        grid::AbstractVector{<:Real} = locations(Δ0),
     )
 
     # invert impurity Green's function

@@ -83,6 +83,7 @@ using Test
         @test moment(Σ, 0) ≈ inv((inv(m0))[1:2, 1:2]) atol = 1.0e2 * eps()
         # m1, m2 not analytically tested
         @test moment(Σ, 1) ≈ [-1.4015 -0.47125; -0.47125 -1.120625] atol = 1.0e3 * eps()
-        @test moment(Σ, 2) ≈ [3.5254375 0.58536875; 0.58536875 2.412646875] atol = 1.0e3 * eps()
+        @test moment(Σ, 2) ≈
+            [3.5254375 0.58536875; 0.58536875 2.412646875] atol = 1.0e3 * eps()
     end # IFG block size four
 end # self-energy

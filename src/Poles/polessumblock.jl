@@ -21,7 +21,8 @@ struct PolesSumBlock{A <: Real, B <: Number} <: AbstractPolesSum{A, B}
 
     function PolesSumBlock{A, B}(locations, weights) where {A, B}
         length(locations) == length(weights) || throw(DimensionMismatch("length mismatch"))
-        all(ishermitian, weights)::Bool || throw(ArgumentError("weights violate Hermiticity"))
+        all(ishermitian, weights)::Bool ||
+            throw(ArgumentError("weights violate Hermiticity"))
         allequal(size, weights)::Bool ||
             throw(DimensionMismatch("weights do not have matching size"))
         _issorted_and_unique(locations)
@@ -50,7 +51,10 @@ julia> weights(P) == wgts
 true
 ```
 """
-function PolesSumBlock(locs::AbstractVector{A}, wgts::Vector{<:AbstractMatrix{B}}) where {A, B}
+function PolesSumBlock(
+        locs::AbstractVector{A},
+        wgts::Vector{<:AbstractMatrix{B}},
+    ) where {A, B}
     length(locs) == length(wgts) || throw(DimensionMismatch("length mismatch"))
 
     # Do no mutate user input.
@@ -205,7 +209,8 @@ function evaluate_gaussian(P::PolesSumBlock, ω::Real, σ::Real)
 end
 
 function filling(P::PolesSumBlock{<:Any, B}, μ::Real = 0) where {B}
-    result = zeros(B <: Real ? Float64 : ComplexF64, size(P)) # half weight changes Int → Float
+    # half weight changes Int → Float
+    result = zeros(B <: Real ? Float64 : ComplexF64, size(P))
 
     for (loc, wgt) in P
         if loc < μ
@@ -230,7 +235,10 @@ function Base.:+(A::PolesSumBlock{LA, WA}, B::PolesSumBlock{LB, WB}) where {LA, 
     return PolesSumBlock{L, W}(locs, wgts)
 end
 
-function Base.convert(::Type{PolesSumBlock{M, N}}, P::PolesSumBlock{A, B}) where {M, N, A, B}
+function Base.convert(
+        ::Type{PolesSumBlock{M, N}},
+        P::PolesSumBlock{A, B},
+    ) where {M, N, A, B}
     locs = convert(Vector{M}, locations(P))
     wgts = convert.(Matrix{N}, weights(P))
     return PolesSumBlock{M, N}(locs, wgts)
@@ -248,11 +256,13 @@ function Base.show(io::IO, P::PolesSumBlock)
 end
 
 function Base.size(P::PolesSumBlock)
-    isempty(P) && throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
+    isempty(P) &&
+        throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
     return size(first(weights(P)))
 end
 function Base.size(P::PolesSumBlock, i)
-    isempty(P) && throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
+    isempty(P) &&
+        throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
     return size(first(weights(P)), i)
 end
 

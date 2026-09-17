@@ -1,5 +1,6 @@
 """
-    PolesContinuedFractionBlock{A <: Number, B <: Number} <: AbstractPolesContinuedFraction{A, B}
+    PolesContinuedFractionBlock{A <: Number, B <: Number} <:
+        AbstractPolesContinuedFraction{A, B}
 
 Representation of poles on the real axis with as a continued fraction with
 locations ``A_i`` of type `A` and amplitudes ``B_i`` of type `B`.
@@ -11,7 +12,8 @@ The scale factor ``S`` rescales the whole object.
 P(z) = S \\frac{1}{z - A_1 - B_1 \\frac{1}{z - A_2 - …} B_1} S
 ```
 """
-struct PolesContinuedFractionBlock{A <: Number, B <: Number} <: AbstractPolesContinuedFraction{A, B}
+struct PolesContinuedFractionBlock{A <: Number, B <: Number} <:
+    AbstractPolesContinuedFraction{A, B}
     locations::Vector{Matrix{A}}
     amplitudes::Vector{Matrix{B}}
     scale::Matrix{B}
@@ -86,7 +88,8 @@ end
 
 # scale is identity matrix
 function PolesContinuedFractionBlock(
-        locs::AbstractVector{<:AbstractMatrix{<:A}}, amps::AbstractVector{<:AbstractMatrix{<:B}}
+        locs::AbstractVector{<:AbstractMatrix{<:A}},
+        amps::AbstractVector{<:AbstractMatrix{<:B}},
     ) where {A, B}
     scl = LinearAlgebra.I(size(first(locs), 1))
     return PolesContinuedFractionBlock{A, B}(locs, amps, scl)

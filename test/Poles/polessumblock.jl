@@ -11,9 +11,16 @@ using Test
             @test P.locations === locs
             @test P.weights === wgts
             @test @allocated(PolesSumBlock{Int, Int}(locs, wgts)) == 0 # no allocations
-            @test_throws DimensionMismatch PolesSumBlock{Int, Int}(rand(Int, 3), wgts) # length mismatch
-            @test_throws ArgumentError PolesSumBlock{Int, Complex{Int}}([1], [[1 2im; 2im 1]]) # not Hermitian
-            @test_throws DimensionMismatch PolesSumBlock{Int, Int}([0, 1], [[1 2im; -2im 1], [1;;]]) # weights wrong size
+            # length mismatch
+            @test_throws DimensionMismatch PolesSumBlock{Int, Int}(rand(Int, 3), wgts)
+            # not Hermitian
+            @test_throws ArgumentError PolesSumBlock{Int, Complex{Int}}(
+                [1], [[1 2im; 2im 1]],
+            )
+            # weights wrong size
+            @test_throws DimensionMismatch PolesSumBlock{Int, Int}(
+                [0, 1], [[1 2im; -2im 1], [1;;]],
+            )
             PolesSumBlock{Int, Float64}(Int[], Matrix{Float64}[]) # empty lists
         end # inner constructor
 
@@ -84,10 +91,10 @@ using Test
             # complex
             P = PolesSumBlock(0:1, [[1 0.5im; -0.5im 1], [0 0; 0 0]])
             @inferred amplitude(P, 1)
-            @test norm(
-                amplitude(P, 1) -
-                    [1 + sqrt(3) (sqrt(3) - 1)im; -(sqrt(3) - 1)im 1 + sqrt(3)] ./ (2 * sqrt(2)),
-            ) < 10 * eps()
+            diagonal = 1 + sqrt(3)
+            offdiagonal = (sqrt(3) - 1)im
+            ref = [diagonal offdiagonal; -offdiagonal diagonal] ./ (2 * sqrt(2))
+            @test norm(amplitude(P, 1) - ref) < 10 * eps()
 
             # thin with some weights exactly zero
             w = zeros(10, 10)
@@ -461,9 +468,13 @@ using Test
             P = PolesSumBlock(Int[], Matrix{Float64}[])
             @test sprint(show, P) == "PolesSumBlock{Int64, Float64} with 0 poles"
             P = PolesSumBlock(rand(Int, 1), [hermitianpart!(rand(Float64, 2, 2))])
-            @test sprint(show, P) == "PolesSumBlock{Int64, Float64} with 1 poles of size 2×2"
-            P = PolesSumBlock(rand(Int, 2), [hermitianpart!(rand(Float64, 3, 3)) for _ in 1:2])
-            @test sprint(show, P) == "PolesSumBlock{Int64, Float64} with 2 poles of size 3×3"
+            @test sprint(show, P) ==
+                "PolesSumBlock{Int64, Float64} with 1 poles of size 2×2"
+            P = PolesSumBlock(
+                rand(Int, 2), [hermitianpart!(rand(Float64, 3, 3)) for _ in 1:2],
+            )
+            @test sprint(show, P) ==
+                "PolesSumBlock{Int64, Float64} with 2 poles of size 3×3"
         end # show
 
         @testset "size" begin
@@ -487,7 +498,9 @@ using Test
         end # sort!
 
         @testset "transpose" begin
-            P = PolesSumBlock([0, 1], [[5 4 + 8im; 4 - 8im 16], [9 18 + 15im; 18 - 15im 61]])
+            P = PolesSumBlock(
+                [0, 1], [[5 4 + 8im; 4 - 8im 16], [9 18 + 15im; 18 - 15im 61]],
+            )
             Pt = transpose(P)
             @test locations(Pt) == [0, 1]
             @test locations(Pt) !== locations(P) # must copy

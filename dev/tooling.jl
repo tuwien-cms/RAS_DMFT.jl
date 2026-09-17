@@ -41,7 +41,11 @@ end
 
 # default stdout
 function colorprint(
-        s::Unsigned, nfilled_bit::Int = 0, nempty_bit::Int = 0, nfilled::Int = 0, nempty::Int = 0
+        s::Unsigned,
+        nfilled_bit::Int = 0,
+        nempty_bit::Int = 0,
+        nfilled::Int = 0,
+        nempty::Int = 0,
     )
     return colorprint(stdout, s, nfilled_bit, nempty_bit, nfilled, nempty)
 end
