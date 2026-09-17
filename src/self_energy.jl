@@ -42,20 +42,25 @@ function self_energy_dyson(
 end
 
 """
-    self_energy_IFG(C::PolesSumBlock, block::Int = 1)
+    self_energy_schur(C::PolesSumBlock, block::Int = 1)
 
 Given a block sum of poles ``C``, calculate the dynamic part of the self-energy
-using the Schur complement
-``Σ(z) = I(z) - F^\\mathrm{L}(z) (G(z))^{-1} F^\\mathrm{R}(z)``.
+by inverting ``C``, projecting onto the block ``b``, and inverting again,
 
-The `block` argument chooses either the top left component (default `1`)
+```math
+Σ(z) = \\left( \\left[C^{-1}(z) \\right]_{bb} \\right)^{-1} \\.,
+```
+
+which is the Schur complement of ``C`` with respect to the other block.
+
+The `block` argument chooses ``b`` as either the top left component (default `1`)
 or bottom right (`2`) component.
 
 Returns a `PolesSumBlock` object.
 
 Reference: https://doi.org/10.1103/PhysRevB.105.245132
 """
-function self_energy_IFG(C::PolesSumBlock, block::Int = 1)
+function self_energy_schur(C::PolesSumBlock, block::Int = 1)
     T = eltype(C) <: Real ? Float64 : ComplexF64
     N = length(C)
     n = size(C, 1) # block size

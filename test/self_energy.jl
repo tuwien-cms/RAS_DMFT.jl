@@ -55,14 +55,14 @@ using Test
         @test !any(iszero, locations(Σ)) # no pole at 0 for metal
     end # self_energy_dyson
 
-    @testset "IFG" begin
-        Σ = PolesSum(self_energy_IFG(C), 1, 1)
+    @testset "Schur" begin
+        Σ = PolesSum(self_energy_schur(C), 1, 1)
         merge_small_weight!(Σ, tol)
         @test moment(Σ, 0) ≈ U^2 / 4 rtol = 1.0e3 * eps()
         @test moment(Σ, 1) ≈ 0 atol = 1.0e-9
-    end # correlator
+    end # Schur
 
-    @testset "IFG block size four" begin
+    @testset "Schur block size four" begin
         locsC = [-1.5, -0.5, 0.8]
         # lower-right 2x2 blocks are dyadic and sum is exactly I
         W1 = [1.2 0.3 0.1 0.0; 0.3 0.9 0.2 0.1; 0.1 0.2 0.25 0.125; 0.0 0.1 0.125 0.25]
@@ -75,7 +75,7 @@ using Test
         @test m0[3:4, 3:4] == I # Green's function moment from anti-commutator
         @test norm(m0[1:2, 3:4]) > 0.1 * norm(m0) # coupling must not vanish
 
-        Σ = self_energy_IFG(C4)
+        Σ = self_energy_schur(C4)
         merge_degenerate_poles!(Σ, 30 * eps())
         @test size(Σ) == (2, 2)
         @test length(Σ) == 15
@@ -85,5 +85,5 @@ using Test
         @test moment(Σ, 1) ≈ [-1.4015 -0.47125; -0.47125 -1.120625] atol = 1.0e3 * eps()
         @test moment(Σ, 2) ≈
             [3.5254375 0.58536875; 0.58536875 2.412646875] atol = 1.0e3 * eps()
-    end # IFG block size four
+    end # Schur block size four
 end # self-energy
