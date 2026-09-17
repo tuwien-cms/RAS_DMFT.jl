@@ -36,7 +36,8 @@ N = 51 # number of points
 grid = range(-D, D; length = N) # linear grid (others are possible)
 G0 = greens_function_bethe_grid(grid)
 
-# This returns a `PolesSum` instance which only stores locations ``ϵ_i`` and weights ``w_i``.
+# This returns a `PolesSum` instance
+# which only stores locations ``ϵ_i`` and weights ``w_i``.
 f = Figure();
 ax = Axis(f[1, 1]; xlabel = "locations", ylabel = "weights")
 plot!(ax, locations(G0), weights(G0))
