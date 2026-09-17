@@ -58,7 +58,7 @@ julia --project=. --eval 'using Pkg; Pkg.test()'
 - Only user-visible changes get an entry.
   A refactor, a test, or a comment does not.
 - Open the pull request first.
-  Then add the entries in a trailing `docs: update changelog` commit
+  Then add the entries in a trailing `chore: update CHANGELOG` commit
   and push again.
   The PR number does not exist before that,
   and a commit cannot contain its own hash.
