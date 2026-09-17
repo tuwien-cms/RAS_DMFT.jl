@@ -45,7 +45,7 @@ function init_system(
     ψ_start = RASWavefunction_singlet(
         Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
     )
-    E0, ψ0 = ground_state!(H, ψ_start, 5, typemax(Int), var)
+    E0, ψ0 = ground_state!(H, ψ_start, 5, 100, var)
     return H, E0, ψ0
 end
 
