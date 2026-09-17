@@ -79,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init_system` stops after 100 restarts instead of looping forever
   when the requested variance is unreachable
   ([#253](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/253)) (a9149aa)
+- `greens_function_bethe_analytic(-0.0)` returns the retarded branch
+  ([#254](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/254)) (022c2f1)
 
 ## [0.11.0] - 2026-08-14
 
