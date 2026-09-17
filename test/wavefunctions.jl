@@ -71,7 +71,8 @@ using Test
         E = Vector{Float64}(undef, 3)
         var = Vector{Float64}(undef, 3)
         for i in eachindex(E)
-            E[i], ψ0 = ground_state!(H, ψ0, n_kryl, 10, 0)
+            # a variance of 0 is never reached, so every call warns
+            E[i], ψ0 = @test_logs (:warn,) ground_state!(H, ψ0, n_kryl, 10, 0)
             foo = H * ψ0
             var[i] = foo ⋅ foo
         end
@@ -111,7 +112,7 @@ using Test
         ψ_start = RASWavefunction_singlet(
             Dict{UInt64, Float64}, L_v, L_c, H.nfilled, H.nempty, p
         )
-        E_sym, _ = ground_state!(H, ψ_start, n_kryl, 10, 0)
+        E_sym, _ = @test_logs (:warn,) ground_state!(H, ψ_start, n_kryl, 10, 0)
         @test E_sym - U / 4 ≈ E_total[1] rtol = 2.0e-13
     end # ground state
 end # wavefunctions

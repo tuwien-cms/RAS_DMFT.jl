@@ -100,11 +100,10 @@ function ground_state!(
         foo = H * ψ0
         var = foo ⋅ foo
         if var <= variance
-            # variance is below input
-            @info "ground state variance reached after $(n_kryl * itr) Krylov steps"
+            @debug "ground state variance reached after $(n_kryl * itr) Krylov steps"
             break
         elseif itr == n_max_restart
-            @info "Target variance not reached. Stopped at $(var)"
+            @warn "target variance not reached, stopped at $(var)"
         end
     end
 

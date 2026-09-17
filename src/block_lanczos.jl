@@ -116,7 +116,7 @@ function block_lanczos_full_ortho(
         _orthonormalize_GramSchmidt!(Q[j]) # numerical instability
         if norm(B[j - 1]) < tol
             # stop early
-            @info "block Lanczos stopping early: norm(B[$(j - 1)]) = $(norm(B[j - 1]))"
+            @debug "block Lanczos stopping early: norm(B[$(j - 1)]) = $(norm(B[j - 1]))"
             deleteat!(A, j:N)
             deleteat!(B, (j - 1):(N - 1))
             deleteat!(Q, j:N)
