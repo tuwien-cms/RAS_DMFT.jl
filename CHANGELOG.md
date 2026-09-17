@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (675e34f)
 - `ground_state!` on an already-shifted Hamiltonian returns the remaining correction,
   not the running total ([#247](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/247)) (1c6a88a)
+- `self_energy_IFG` → `self_energy_schur`
+  ([#259](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/259)) (61d7bad)
 
 ### Removed
 
