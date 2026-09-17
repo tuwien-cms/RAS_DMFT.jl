@@ -83,6 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#254](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/254)) (022c2f1)
 - `natural_impurity_orbital_ras_operator` accepts an empty valence or conduction chain
   ([#255](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/255)) (2335f63)
+- `find_chemical_potential` counts a level at the Fermi level half
+  ([#256](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/256)) (4bd5028)
 
 ## [0.11.0] - 2026-08-14
 
