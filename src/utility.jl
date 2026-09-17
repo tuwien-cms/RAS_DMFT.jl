@@ -168,7 +168,8 @@ function _arrowhead_eigen(
 end
 
 # Calculate filling for given chemical potential μ.
-function _filling_mu(H_k, Σ_stat, Σ_A::AbstractMatrix, μ)
+# Weight within `tol` of the Fermi level is shared evenly.
+function _filling_mu(H_k, Σ_stat, Σ_A::AbstractMatrix, μ; tol::Real = 1.0e-8)
     n_b = LinearAlgebra.checksquare(first(H_k)) # number of bands
     z = zero(float(real(eltype(Σ_A))))
     result = Threads.Atomic{typeof(z)}(z)
@@ -182,9 +183,11 @@ function _filling_mu(H_k, Σ_stat, Σ_A::AbstractMatrix, μ)
         @inbounds for j in axes(Σ_A, 2)
             ϵ = F.values[j]
             v = @view F.vectors[1:n_b, j]
-            if ϵ < 0
-                # Trace of v*v' is sum of values squared.
+            # Trace of v*v' is sum of values squared.
+            if ϵ < -tol
                 n_loc += sum(abs2, v)
+            elseif ϵ <= tol
+                n_loc += sum(abs2, v) / 2
             end
         end
         Threads.atomic_add!(result, n_loc)
