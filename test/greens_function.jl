@@ -10,6 +10,7 @@ using Test
             @test greens_function_bethe_analytic(-true) == -2
             @test greens_function_bethe_analytic(-1 // 2) == -1.0 - 1.7320508075688772im
             @test greens_function_bethe_analytic(false) == -2im
+            @test greens_function_bethe_analytic(-0.0) == -2im # not the Im > 0 branch
             @test greens_function_bethe_analytic(0.1im) == -1.809975124224178im
             @test greens_function_bethe_analytic(0.5) == 1.0 - 1.7320508075688772im
             @test greens_function_bethe_analytic(0x01) == 2

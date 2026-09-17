@@ -14,11 +14,12 @@ and half-bandwidth `D`.
 G(z) = \\frac{2}{D^2} \\left(z - \\mathrm{sgn}(\\mathrm{Re}(z)) \\sqrt{z^2 - D^2}\\right)
 ```
 
-with ``\\mathrm{sgn}(0) = \\mathrm{sgn}(0^±)``.
+with ``\\mathrm{sgn}(0) = \\mathrm{sgn}(0^+)``,
+the only branch with ``\\mathrm{Im} G \\leq 0``.
 """
 function greens_function_bethe_analytic(z::Number, D::Real = 1.0)
     _check_half_width(D)
-    s = (-1)^signbit(real(z)) # sign(0) = sign(0^±)
+    s = real(z) < 0 ? -1 : 1 # sign(0) = sign(0^+), also for -0.0
     return 2 / D^2 * (z - s * sqrt((z + 0.0im)^2 - D^2))
 end
 
