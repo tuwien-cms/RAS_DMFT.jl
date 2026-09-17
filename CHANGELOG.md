@@ -76,6 +76,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `find_chemical_potential` and `greens_function_local` accept a real self-energy
   together with a complex dispersion
   ([#250](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/250)) (19edfbd)
+- `init_system` stops after 100 restarts instead of looping forever
+  when the requested variance is unreachable
+  ([#253](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/253)) (a9149aa)
 
 ## [0.11.0] - 2026-08-14
 
