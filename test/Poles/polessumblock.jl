@@ -136,11 +136,11 @@ using Test
             amps = reshape(0.2:0.1:0.7, (2, 3))
             P = PolesSumBlock(locs, amps)
             # upper/lower complex plane
-            z = 0.5 + 1.0im
+            z = 1.0 + 1.0im
             @test norm(
                 evaluate(P, z) - [
-                    -0.083692307692307677 - 0.25107692307692314im -0.08615384615384615 - 0.30769230769230771im
-                    -0.08615384615384615 - 0.30769230769230771im -0.084615384615384592 - 0.37846153846153846im
+                    -0.084 - 0.268im -0.086 - 0.322im
+                    -0.086 - 0.322im -0.084 - 0.388im
                 ],
             ) < 100 * eps()
             @test evaluate(P, conj(z)) == conj.(permutedims(evaluate(P, z)))
@@ -164,12 +164,12 @@ using Test
             locs = [-1.0, 0.0, 2.0]
             amps = reshape(0.2:0.1:0.7, (2, 3))
             P = PolesSumBlock(locs, amps)
-            @test norm(
-                evaluate_gaussian(P, ω, σ) - [
-                    -0.16702850198727615 - 0.33972394588525767im -0.178700179083296 - 0.41651710181548046im
-                    -0.178700179083296 - 0.41651710181548046im -0.18576841335312091 - 0.51250854672825896im
-                ],
-            ) < 10 * eps()
+            # every entry broadens the scalar PolesSum built from that entry,
+            # whose values `test/Poles/polessum.jl` pins down
+            for i in 1:2, j in 1:2
+                entry = PolesSum(locs, [w[i, j] for w in weights(P)])
+                @test evaluate_gaussian(P, ω, σ)[i, j] == evaluate_gaussian(entry, ω, σ)
+            end
             # grid
             ω = [0.1, 0.3]
             @test evaluate_gaussian(P, ω, 0.5) ==
@@ -177,16 +177,16 @@ using Test
         end # evaluate_gaussian
 
         @testset "evaluate_lorentzian" begin
-            ω = 0.5
+            ω = 1.0
             δ = 1.0
             locs = [-1.0, 0.0, 2.0]
             amps = reshape(0.2:0.1:0.7, (2, 3))
-            # single point
+            # single point, equal to evaluate at ω + iδ
             P = PolesSumBlock(locs, amps)
             @test norm(
                 evaluate_lorentzian(P, ω, δ) - [
-                    -0.083692307692307677 - 0.25107692307692314im -0.08615384615384615 - 0.30769230769230771im
-                    -0.08615384615384615 - 0.30769230769230771im -0.084615384615384592 - 0.37846153846153846im
+                    -0.084 - 0.268im -0.086 - 0.322im
+                    -0.086 - 0.322im -0.084 - 0.388im
                 ],
             ) < eps()
             # grid
