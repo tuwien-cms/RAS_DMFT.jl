@@ -148,8 +148,9 @@ xlims!(ax, first(W), last(W))
 #md # ![](spectrum1.svg)
 
 # ### Self-energy
-# Here, we use the improved symmetric estimator[^Kugler2022] ``Σ^\mathrm{IFG}``.
-Σ = self_energy_IFG(C)
+# Here, we use the improved symmetric estimator[^Kugler2022],
+# which is evaluated as a Schur complement.
+Σ = self_energy_schur(C)
 Σ = PolesSum(Σ, 1, 1)
 sigma = evaluate_gaussian(Σ, W, σ)
 f = Figure();
