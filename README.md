@@ -11,17 +11,21 @@ Restricted active space DMFT solver on the real frequency axis.
 
 ## Installation
 
-As the package is not inside the [General registry](https://github.com/JuliaRegistries/General),
+This package depends on the private `Fermions.jl`,
+which has to be installed first.
+
+As the package is not inside the
+[General registry](https://github.com/JuliaRegistries/General),
 it needs to be added
 [manually](https://pkgdocs.julialang.org/v1/managing-packages/#Adding-unregistered-packages).
+Once `Fermions.jl` is installed, run
 
 ```sh
-export JULIA_PKG_USE_CLI_GIT="true"
 julia --project=path/to/project --eval 'using Pkg; Pkg.add(url="https://github.com/tuwien-cms/RAS_DMFT.jl")'
 ```
 
-If the package is installed, you can run all tests with
+## Usage
 
-```julia
-julia --project=path/to/project --eval 'using Pkg; Pkg.test("RAS_DMFT")'
-```
+The [tutorial](https://tuwien-cms.github.io/RAS_DMFT.jl/stable/generated/tutorial/)
+solves a half-filled single-band Hubbard model on the Bethe lattice.
+See also the [API reference](https://tuwien-cms.github.io/RAS_DMFT.jl/stable/api/).

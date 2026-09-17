@@ -4,23 +4,65 @@ Contributions are always welcome.
 
 ## Formatting
 
-- Julia code: format with [Runic](https://github.com/fredrikekre/Runic.jl).
+- Julia code: format with [Runic](https://github.com/fredrikekre/Runic.jl):
+  `runic --check .` reports, `runic -i .` rewrites.
   Keep lines under ~92 characters.
 - Markdown: format with [Prettier](https://prettier.io):
-  `npx prettier --write "**/*.md"`.
+  `prettier --write "**/*.md"`.
   Keep lines under ~100 characters.
-  (URLs, LaTeX, code blocks, and tables may exceed these limits
-  when longer lines read better.)
+- URLs, LaTeX, code blocks, tables, and hardcoded numbers in tests
+  may exceed both limits when longer lines read better.
+- Break Markdown lines at logical locations,
+  such as commas, brackets, or the end of a sentence,
+  and start every sentence on a new line.
+  Prettier does not check this,
+  as `proseWrap` keeps its default `preserve`,
+  which is also why it must never be set to `always`.
+
+## Naming
+
+- Struct fields stay ASCII (`e_v`, `t_v`).
+- Function arguments may use Unicode (`ϵ_imp`, `ϵ_mf`, `Δ`).
+- Greek epsilon is U+03F5 `ϵ` (`\epsilon`),
+  never U+03B5 `ε` (`\varepsilon`).
+- Use the ASCII hyphen `-` in comments and docstrings,
+  never U+2212 `−` or U+2013 `–`.
 
 ## Testing
 
-Run the test suite with
+Run the test suite from the repository root with
 
 ```sh
-julia --project=. -e 'using Pkg; Pkg.test("RAS_DMFT")'
+julia --project=. --eval 'using Pkg; Pkg.test()'
 ```
+
+- A new feature comes with its tests.
+- A bug fix comes with a test that fails on the unfixed version.
+- Prefer hardcoded expected values over comparing a function to itself.
+- Set a tolerance on random data by rounding the worst deviation you measure up,
+  otherwise the test goes flaky on another machine.
 
 ## Commits
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/);
-see the git history for examples.
+- Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+  The git history has examples.
+- Keep one logical change per commit.
+- Write the header only.
+  Add a body when the diff alone would mislead,
+  such as a breaking change,
+  a non-obvious physics or numerics reason,
+  or a fix whose cause is not visible in the changed lines.
+
+## CHANGELOG
+
+- Only user-visible changes get an entry.
+  A refactor, a test, or a comment does not.
+- Open the pull request first.
+  Then add the entries in a trailing `docs: update changelog` commit
+  and push again.
+  The PR number does not exist before that,
+  and a commit cannot contain its own hash.
+- Cite both, as
+  `([#NNN](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/NNN)) (short hash)`.
+- One PR contributes as many entries as it has changes.
+  Each cites the commit that made its statement true.
