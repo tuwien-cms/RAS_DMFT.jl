@@ -83,7 +83,7 @@ using Test
         @test norm(wgts[2] - amp2 * amp2') < 10000 * eps()
         @test view(ma, 5:12, 5:12) == Diagonal([1, 1, 1, 1, 2, 2, 2, 2])
         # thin rectangular amplitudes
-        ma = arrowhead_matrix(P, 10 * sqrt(eps()); thin = true)
+        ma = arrowhead_matrix(P; tol_weight = 100 * eps(), thin = true)
         @test ishermitian(ma)
         @test iszero(@view ma[1:4, 1:4])
         amp1 = @view ma[1:4, 5]

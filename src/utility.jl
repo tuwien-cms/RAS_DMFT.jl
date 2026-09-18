@@ -75,7 +75,7 @@ end
         b_max::Int = 30,
         μ_min::Real = minimum(locations(Σ_dyn)),
         μ_max::Real = maximum(locations(Σ_dyn)),
-        tol_weight::Real = 0,
+        tol_weight::Real = tol_weight_default(Σ_dyn),
     )
 
 Find chemical potential ``μ``, such that desired filling ``n_\\mathrm{fill}`` is fulfilled
@@ -107,7 +107,8 @@ Returns the calculated chemical potential and effective filling.
 - `b_max::Int = 30`: maximum number of bisections
 - `μ_min::Real = minimum(locations(Σ_dyn))`: initial lower bound for `μ`
 - `μ_max::Real = maximum(locations(Σ_dyn))`: initial upper bound for `μ`
-- `tol_weight::Real = 0`: treat weights less or equal than this value in `Σ_dyn` as zero
+- `tol_weight::Real = tol_weight_default(Σ_dyn)`:
+  treat weights in `Σ_dyn` at or below this value as zero
 """
 function find_chemical_potential(
         H_k::Vector{<:AbstractMatrix},
@@ -118,7 +119,7 @@ function find_chemical_potential(
         b_max::Int = 30,
         μ_min::Real = minimum(locations(Σ_dyn)),
         μ_max::Real = maximum(locations(Σ_dyn)),
-        tol_weight::Real = 0,
+        tol_weight::Real = tol_weight_default(Σ_dyn),
     )
     # check input
     n_b = size(first(H_k), 1)
@@ -131,7 +132,7 @@ function find_chemical_potential(
 
     # represent dynamic part of self-energy as block arrowhead matrix,
     T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))
-    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true))
+    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn; tol_weight, thin = true))
 
     # filling for initial guesses
     n_min = _filling_mu(H_k, Σ_stat, Σ_A, μ_min)

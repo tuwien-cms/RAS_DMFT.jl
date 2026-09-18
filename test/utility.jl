@@ -65,7 +65,7 @@ using Test
         H_k = [[0.0;;]]
         Σ_stat = Diagonal([0.0])
         Σ_dyn = PolesSumBlock([-1.0, 1.0], [[0.5;;], [0.5;;]])
-        Σ_A = arrowhead_matrix(Σ_dyn, 0.0; thin = true)
+        Σ_A = arrowhead_matrix(Σ_dyn; tol_weight = 0, thin = true)
         @test RAS_DMFT._filling_mu(H_k, Σ_stat, Σ_A, 0.0) ≈ 0.5 atol = 10 * eps()
         # PHS: n(-μ) + n(+μ) = 1
         μ = 2.0

@@ -8,8 +8,8 @@ The canonical representation requires the locations to be strictly increasing
 """
 abstract type AbstractPolesSum{A, B} <: AbstractPoles{A, B} end
 
-function amplitudes(P::AbstractPolesSum, args...; kwargs...)
-    return map(i -> amplitude(P, i, args...; kwargs...), eachindex(P))
+function amplitudes(P::AbstractPolesSum)
+    return map(i -> amplitude(P, i), eachindex(P))
 end
 
 """
@@ -23,15 +23,13 @@ Reference: [DOI](https://doi.org/10.48550/arXiv.2605.04974), appendix A3d
 function anderson_matrix end
 
 """
-    arrowhead_matrix(P::AbstractPolesSum, args...; kwargs...)
+    arrowhead_matrix(P::AbstractPolesSum)
 
 Calculate the (block) arrowhead matrix representation of
 
 ```math
 \\frac{1}{z - \\mathbb{0} - P(z)} .
 ```
-
-See also [`amplitude`](@ref) for details of `args...` and `kwargs...`.
 
 ```jldoctest
 julia> P = PolesSum(1:2, [4, 9])
@@ -344,6 +342,23 @@ function to_grid(P::AbstractPolesSum, grid::AbstractVector{<:Real})
         end
     end
     return typeof(P)(copy(grid), weights_new)
+end
+
+"""
+    tol_weight_default(P::AbstractPolesSum)
+
+Return the weight below which a weight of `P` is indistinguishable
+from the noise of its decomposition.
+
+```jldoctest
+julia> tol_weight_default(PolesSum(1:2, [0.25, 0.75])) ≈ 1000 * eps()
+true
+```
+"""
+function tol_weight_default(P::AbstractPolesSum)
+    T = float(real(eltype(P)))
+    isempty(P) && return zero(T)
+    return 1000 * eps(T) * _mag(moment(P, 0))
 end
 
 weight(P::AbstractPolesSum, i::Integer) = weights(P)[i]

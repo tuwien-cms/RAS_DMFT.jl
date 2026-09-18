@@ -144,34 +144,77 @@ end
 
 PolesSumBlock{A, B}(P::PolesSumBlock) where {A, B} = convert(PolesSumBlock{A, B}, P)
 
-function amplitude(P::PolesSumBlock, i::Integer, tol_amp::Real = 0; thin::Bool = false)
-    tol_amp >= 0 || throw(DomainError(tol_amp, "negative amplitude"))
+"""
+    amplitude(
+        P::PolesSumBlock,
+        i::Integer;
+        thin::Bool = false,
+        tol_weight::Real = thin ? tol_weight_default(P) : 0,
+    )
+
+Compute the amplitude from an eigendecomposition of the weight.
+
+Given ``W = U Σ^2 U^†``,
+eigenvalues ``σ_j^2`` at or below `tol_weight` are chopped off.
+
+The principal square root (`thin = false`) ``B = U Σ U^†`` results in ``B B = W``,
+the thin rectangular amplitude (`thin = true`) ``B = U Σ`` in ``B B^† = W``.
+Only the latter has a rank to determine,
+so only it chops by default.
+"""
+function amplitude(
+        P::PolesSumBlock,
+        i::Integer;
+        thin::Bool = false,
+        tol_weight::Real = thin ? tol_weight_default(P) : 0,
+    )
+    tol_weight >= 0 || throw(DomainError(tol_weight, "negative weight"))
 
     w = weight(P, i)
     F = eigen(Hermitian(w))
-    map!(i -> i > tol_amp^2 ? sqrt(i) : zero(i), F.values) # set small amplitudes to zero
+    map!(λ -> λ > tol_weight ? sqrt(λ) : zero(λ), F.values)
     if !thin
-        # General Julia code does not know about semipositive eigenvalues
-        # and gives eltype as union of Float64 and ComplexF64.
-        # Therefore, decompose by hand and apply square root in-place.
         result = F.vectors * Diagonal(F.values) * F.vectors'
         hermitianpart!(result)
     else
         n = size(w, 2)
-        r = sum(>(tol_amp), F.values) # rank
+        r = count(>(0), F.values) # rank
         result = Matrix{eltype(F)}(undef, n, r)
-        j = 1
-        for i in 1:n
-            F.values[i] > tol_amp || continue
-            @views result[:, j] .= F.vectors[:, i] .* F.values[i]
-            j += 1
+        col = 1
+        for j in 1:n
+            F.values[j] > 0 || continue
+            @views result[:, col] .= F.vectors[:, j] .* F.values[j]
+            col += 1
         end
     end
     return result
 end
 
-function arrowhead_matrix(P::PolesSumBlock, args...; kwargs...)
-    amps = amplitudes(P, args...; kwargs...)
+# The default is evaluated once here instead of once per pole.
+"""
+    amplitudes(
+        P::PolesSumBlock;
+        thin::Bool = false,
+        tol_weight::Real = thin ? tol_weight_default(P) : 0,
+    )
+
+Forward the keywords to [`amplitude(::PolesSumBlock, ::Integer)`](@ref).
+"""
+function amplitudes(
+        P::PolesSumBlock;
+        thin::Bool = false,
+        tol_weight::Real = thin ? tol_weight_default(P) : 0,
+    )
+    return map(i -> amplitude(P, i; thin, tol_weight), eachindex(P))
+end
+
+"""
+    arrowhead_matrix(P::PolesSumBlock; kwargs...)
+
+Forward `kwargs...` to [`amplitude(::PolesSumBlock, ::Integer)`](@ref).
+"""
+function arrowhead_matrix(P::PolesSumBlock; kwargs...)
+    amps = amplitudes(P; kwargs...)
     T = promote_type(eltype(P), eltype(eltype((amps))))
     n_b = size(P, 1)
     dim = n_b + sum(amp -> size(amp, 2), amps)

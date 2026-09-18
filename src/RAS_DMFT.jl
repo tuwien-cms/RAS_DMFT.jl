@@ -83,6 +83,7 @@ export
     spectral_function_loggaussian,
     temperature_kondo,
     to_grid,
+    tol_weight_default,
     tridiagonal_matrix,
     update_hybridization_function,
     weight,

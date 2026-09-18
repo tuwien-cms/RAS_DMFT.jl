@@ -142,7 +142,7 @@ end
         Σ_dyn::PolesSumBlock,
         μ::Real;
         tol_location::Real = 0,
-        tol_weight::Real = 0,
+        tol_weight::Real = tol_weight_default(Σ_dyn),
     )
 
 Calculate the interacting local Green's function for a given dispersion relation ``H_k``
@@ -155,7 +155,8 @@ G_\\mathrm{loc}(z) = \\frac{1}{N_k} ∑_k \\frac{1}{z + μ - H_k - Σ(z)} .
 # Arguments
 - `tol_location::Real = 0`: treat locations less or equal than this value
   in `G_loc` as degenerate
-- `tol_weight::Real = 0`: treat weights less or equal than this value in `Σ_dyn` as zero
+- `tol_weight::Real = tol_weight_default(Σ_dyn)`:
+  treat weights in `Σ_dyn` at or below this value as zero
 """
 function greens_function_local(
         H_k::Vector{<:AbstractMatrix},
@@ -163,7 +164,7 @@ function greens_function_local(
         Σ_dyn::PolesSumBlock,
         μ::Real;
         tol_location::Real = 0,
-        tol_weight::Real = 0,
+        tol_weight::Real = tol_weight_default(Σ_dyn),
     )
     # check input
     n_b = LinearAlgebra.checksquare(first(H_k)) # number of bands
@@ -176,7 +177,7 @@ function greens_function_local(
 
     # represent dynamic part of self-energy as block arrowhead matrix,
     # promoted once instead of at every decomposition
-    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn, sqrt(tol_weight); thin = true))
+    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn; tol_weight, thin = true))
 
     n_k = length(H_k)
     dim = size(Σ_A, 1)

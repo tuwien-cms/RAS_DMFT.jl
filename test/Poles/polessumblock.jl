@@ -104,7 +104,7 @@ using Test
             amps[3, 1] = 2
             amps[5, 2] = 3
             P = PolesSumBlock(rand(1), [w])
-            amp2 = amplitude(P, 1, thin = true)
+            amp2 = amplitude(P, 1; thin = true)
             @test amps == amp2
         end # amplitude
 
@@ -122,7 +122,7 @@ using Test
             wghts = [amps * amps' for amps in amps]
             locs = sort!(rand(10))
             P = PolesSumBlock(locs, wghts)
-            amps2 = amplitudes(P, sqrt(100 * eps()); thin = true)
+            amps2 = amplitudes(P; tol_weight = 100 * eps(), thin = true)
             for i in eachindex(amps)
                 w = wghts[i]
                 amps = amps2[i]
@@ -365,6 +365,22 @@ using Test
             @test norm(weight(foo, 1) - [0.1875 0.5; 0.5 1.0]) < 10 * eps()
             @test norm(weight(foo, 2) - [1.8125 2.25; 2.25 4.5]) < 10 * eps()
         end  # to_grid
+
+        @testset "tol_weight_default" begin
+            @test tol_weight_default(
+                PolesSumBlock([0.0, 1.0], [[0.25 0.0; 0.0 0.25], [0.75 0.0; 0.0 0.75]]),
+            ) === 1000 * eps()
+            # largest eigenvalue, not trace
+            @test tol_weight_default(PolesSumBlock([0.0], [[4.0 0.0; 0.0 1.0]])) ===
+                4000 * eps()
+            @test tol_weight_default(
+                PolesSumBlock([0.0], [ComplexF64[2.0 0.0; 0.0 1.0]]),
+            ) === 2000 * eps()
+            @test tol_weight_default(
+                PolesSumBlock(Float32[0.0], [Float32[1.0 0.0; 0.0 0.5]]),
+            ) === 1000 * eps(Float32)
+            @test tol_weight_default(PolesSumBlock(Float64[], Matrix{Float64}[])) === 0.0
+        end # tol_weight_default
 
         @testset "weight" begin
             locs = 0:1

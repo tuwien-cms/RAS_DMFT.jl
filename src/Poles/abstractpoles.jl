@@ -8,30 +8,21 @@ The locations are described by `A`, the weights/amplitudes by `B`.
 abstract type AbstractPoles{A, B} end
 
 """
-    amplitude(P::AbstractPoles, i::Integer, tol_amp::Real = 0; thin::Bool = false)
+    amplitude(P::AbstractPoles, i::Integer)
 
-Return the amplitude `B_i` of `P` at index `i`.
-
-Given the decomposition ``W_i = U_i Σ_i^2  U_i^†`` of a weight,
-small singular values ``σ_j < \\mathrm{tol\\_amp}`` are chopped off.
-
-Canonically (`thin=false`), the amplitude is given as
-the principal square root ``B_i = U_i Σ_i  U_i^†``
-resulting in ``B_i B_i = W_i``.
-
-Setting (`thin=true`) instead calculates the thin rectangular amplitude ``B_i = U_i Σ_i``
-resulting in ``B_i B_i^† = W_i``.
+Return the amplitude `B_i` of `P` at index `i`,
+satisfying ``B_i B_i^† = W_i`` for the weight `W_i`.
 
 See also [`amplitudes`](@ref).
 """
 function amplitude end
 
 """
-    amplitudes(P::AbstractPoles, args...; kwargs...)
+    amplitudes(P::AbstractPoles)
 
-Return the amplitudes (`sqrt` of weights) of `P`.
+Return the amplitude at every index of `P`.
 
-See also [`amplitude`](@ref) for details of `args...` and `kwargs...`.
+See also [`amplitude`](@ref).
 """
 function amplitudes end
 

@@ -461,6 +461,15 @@ using Test
             @test weights(foo) == [16.0, 25.0]
         end  # to_grid
 
+        @testset "tol_weight_default" begin
+            @test tol_weight_default(PolesSum(1:2, [0.25, 0.75])) === 1000 * eps()
+            @test tol_weight_default(PolesSum(1:2, [1.0, 3.0])) === 4000 * eps()
+            @test tol_weight_default(PolesSum(0:5, 5:10)) === 45_000 * eps()
+            @test tol_weight_default(PolesSum(1:2, Float32[0.25, 0.75])) ===
+                1000 * eps(Float32)
+            @test tol_weight_default(PolesSum(Float64[], Float64[])) === 0.0
+        end # tol_weight_default
+
         @testset "weight" begin
             P = PolesSum([-1.0, 0.0, 0.5], [0.25, 1.5, 2.5])
             @test_throws BoundsError weight(P, 0)
