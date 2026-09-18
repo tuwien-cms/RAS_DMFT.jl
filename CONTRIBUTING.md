@@ -61,6 +61,15 @@ julia --project=. --eval 'using Pkg; Pkg.test()'
 
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
   The git history has examples.
+- The scope is optional and names the area a change is restricted to,
+  whatever the type,
+  as in `docs(Poles)` or `test(Combinatorics)`:
+  - `Poles`
+  - `Combinatorics`
+
+  Leave it out as soon as the change reaches beyond one of them,
+  as most of the history does.
+
 - Keep one logical change per commit.
 - Write the header only.
   Add a body when the diff alone would mislead,
