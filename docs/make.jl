@@ -26,6 +26,7 @@ makedocs(;
         canonical = "https://tuwien-cms.github.io/RAS_DMFT.jl",
         edit_link = "main",
         assets = String[],
+        size_threshold_ignore = ["api.md"],
     ),
     pages = [
         "Home" => "index.md",
