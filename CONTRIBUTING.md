@@ -28,6 +28,21 @@ Contributions are always welcome.
 - Use the ASCII hyphen `-` in comments and docstrings,
   never U+2212 `−` or U+2013 `–`.
 
+## Error messages
+
+- Wrap an error message that interpolates a value in
+  [`lazy"..."`](https://docs.julialang.org/en/v1/base/strings/#Base.LazyString):
+
+  ```julia
+  function check_positive(x::Int)
+      x >= 0 || throw(ArgumentError(lazy"message $(x)"))
+      return x
+  end
+  ```
+
+- A message without interpolation stays a plain string literal,
+  where `lazy"..."` would only add noise.
+
 ## Testing
 
 Run the test suite from the repository root with
