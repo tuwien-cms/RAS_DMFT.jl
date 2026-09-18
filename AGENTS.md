@@ -9,6 +9,18 @@ What follows is procedure only.
   not for the reviewer of the current conversation.
   If the reasoning belongs in the pull request or the changelog, leave it out.
 
+## Documentation
+
+- Build the documentation from the repository root:
+
+  ```sh
+  julia --project=docs docs/make.jl
+  ```
+
+  A build that exits 0,
+  warning only about skipped deployment,
+  means the doctests and the cross-references pass.
+
 ## Tests
 
 - Iterate on the single test file that covers the change,
