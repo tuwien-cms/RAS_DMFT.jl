@@ -138,7 +138,7 @@ function find_chemical_potential(
     n_max = _filling_mu(H_k, Σ_stat, Σ_A, μ_max)
     n_min <= n_fill <= n_max || throw(
         ArgumentError(
-            "violating n(μ_min) = $(n_min) <= n_fill <= n(μ_max) = $(n_max)",
+            lazy"violating n(μ_min) = $(n_min) <= n_fill <= n(μ_max) = $(n_max)",
         ),
     )
 

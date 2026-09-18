@@ -163,7 +163,7 @@ function merge_negative_weight!(P::PolesSum)
     # check input
     m0 = moment(P, 0)
     m0 >= 0 || throw(
-        ArgumentError("total weight is negative: $(m0)."),
+        ArgumentError(lazy"total weight is negative: $(m0)."),
     )
 
     locs = locations(P)
@@ -180,7 +180,7 @@ function merge_negative_weight!(P::PolesSum)
 
         # single pole with negative weight
         i == 1 && length(P) == 1 && throw(
-            ArgumentError("Single pole has negative weight $(wgts[1])."),
+            ArgumentError(lazy"Single pole has negative weight $(wgts[1])."),
         )
 
         # first pole
