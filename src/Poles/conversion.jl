@@ -40,9 +40,9 @@ function anderson_matrix(P::PolesSumBlock)
     return _with_blas_threads(Threads.nthreads()) do
         H_LP = Diagonal(repeat(locations(P); inner = n_b))
         V = vcat(amplitudes(P)...)
-        R_a, B_0 = RAS_DMFT._orthonormalize_SVD(V)
-        RAS_DMFT._orthonormalize_GramSchmidt!(R_a) # numerical instability
-        RAS_DMFT._orthonormalize_GramSchmidt!(R_a) # numerical instability
+        R_a, B_0 = _orthonormalize_SVD(V)
+        _orthonormalize_GramSchmidt!(R_a) # numerical instability
+        _orthonormalize_GramSchmidt!(R_a) # numerical instability
 
         # Find orthogonal complement to create basis (Eq. A41).
         U1 = [R_a nullspace(R_a')]
