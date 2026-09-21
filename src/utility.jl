@@ -67,15 +67,12 @@ end
 
 """
     find_chemical_potential(
-        H_k::Vector{<:AbstractMatrix},
+        H_ks::Vector{<:AbstractMatrix},
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
+        idx::AbstractVector{<:Integer},
         n_fill::Real;
-        μ_tol::Real = 1.0e-6,
-        b_max::Int = 30,
-        μ_min::Real = minimum(locations(Σ_dyn)),
-        μ_max::Real = maximum(locations(Σ_dyn)),
-        tol_weight::Real = tol_weight_default(Σ_dyn),
+        <keyword arguments>
     )
 
 Find chemical potential ``μ``, such that desired filling ``n_\\mathrm{fill}`` is fulfilled
@@ -86,16 +83,23 @@ n_\\mathrm{fill}
 & ≡
 ∫_{-∞}^0 \\mathrm{d}ω~\\mathrm{Tr}
 \\left[
--\\frac{1}{π}\\mathrm{Im}~G_\\mathrm{loc}(ω+\\mathrm{i}0^+)
+-\\frac{1}{π}\\mathrm{Im}~G_\\mathrm{loc}(ω + \\mathrm{i}0^+)
 \\right] \\\\
 & =
 ∫_{-∞}^0 \\mathrm{d}ω~\\mathrm{Tr}
 \\left[
 -\\frac{1}{π}\\mathrm{Im}~
-\\frac{1}{N_k} ∑_k \\frac{1}{ω + \\mathrm{i}0^+ +μ - H_k - Σ(ω + \\mathrm{i}0^+)}
-\\right] .
+\\frac{1}{N_k} ∑_k \\frac{1}{ω + \\mathrm{i}0^+ + μ - H_k - Σ_\\mathrm{stat}
+- P Σ_\\mathrm{dyn} P^†}
+\\right] \\, .
 \\end{aligned}
 ```
+
+The self-energy is split into a static part `Σ_stat`
+spanning the whole space,
+and dynamic part `Σ_dyn` which is only active on some orbitals `idx`.
+Using the projector ``P``,
+the expression ``P Σ_\\mathrm{dyn} P^†`` is the upfolded self-energy.
 
 A bisection algorithm is used which stops once `Δμ < μ_tol`
 or `b_max` iterations are surpassed.
@@ -103,40 +107,48 @@ or `b_max` iterations are surpassed.
 Returns the calculated chemical potential and effective filling.
 
 # Arguments
-- `μ_tol::Real = 1.0e-6`: tolerance `Δμ` to exit bisection early
-- `b_max::Int = 30`: maximum number of bisections
-- `μ_min::Real = minimum(locations(Σ_dyn))`: initial lower bound for `μ`
-- `μ_max::Real = maximum(locations(Σ_dyn))`: initial upper bound for `μ`
-- `tol_weight::Real = tol_weight_default(Σ_dyn)`:
-  treat weights in `Σ_dyn` at or below this value as zero
+- `H_ks::Vector{<:AbstractMatrix}`: Hermitian `n_b × n_b` Hamiltonian per k-point
+- `Σ_stat::AbstractMatrix`: static self-energy, `n_b × n_b`
+- `Σ_dyn::PolesSumBlock`: dynamic self-energy on the correlated block, `n_c × n_c`
+- `idx::AbstractVector{<:Integer}`: the `n_c` correlated orbitals
+- `n_fill::Real`: target filling
+- `μ_tol::Real = 1.0e-7`: stop once the bisection bracket is narrower than this
+- `b_max::Int = 40`: maximum number of bisection steps
+- `μ_min::Real = minimum(locations(Σ_dyn))`: lower end of the initial bracket
+- `μ_max::Real = maximum(locations(Σ_dyn))`: upper end of the initial bracket
+- `n_tol::Real = 1.0e-8`: absolute tolerance of the filling integral
 """
 function find_chemical_potential(
-        H_k::Vector{<:AbstractMatrix},
+        H_ks::Vector{<:AbstractMatrix},
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
+        idx::AbstractVector{<:Integer},
         n_fill::Real;
-        μ_tol::Real = 1.0e-6,
-        b_max::Int = 30,
+        μ_tol::Real = 1.0e-7,
+        b_max::Int = 40,
         μ_min::Real = minimum(locations(Σ_dyn)),
         μ_max::Real = maximum(locations(Σ_dyn)),
-        tol_weight::Real = tol_weight_default(Σ_dyn),
+        n_tol::Real = 1.0e-8,
     )
     # check input
-    n_b = size(first(H_k), 1)
-    allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
+    n_b = LinearAlgebra.checksquare(first(H_ks))
+    n_c = length(idx)
+    allequal(size, H_ks)::Bool || throw(DimensionMismatch("different matrix sizes in H_ks"))
     size(Σ_stat) == (n_b, n_b) ||
-        throw(DimensionMismatch("size of Σ_stat does not match H_k"))
-    (size(Σ_dyn) == (n_b, n_b))::Bool ||
-        throw(DimensionMismatch("size of Σ_dyn does not match H_k"))
+        throw(DimensionMismatch("size of Σ_stat does not match H_ks"))
+    (size(Σ_dyn) == (n_c, n_c))::Bool ||
+        throw(DimensionMismatch("size of Σ_dyn does not match idx"))
+    allunique(idx) || throw(ArgumentError("idx has duplicate orbitals"))
+    all(in(1:n_b), idx) || throw(ArgumentError("idx outside range"))
     μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
+    n_tol > 0 || throw(DomainError(n_tol, "n_tol is not positive"))
 
-    # represent dynamic part of self-energy as block arrowhead matrix,
-    T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))
-    Σ_A = convert(Matrix{T}, arrowhead_matrix(Σ_dyn; tol_weight, thin = true))
+    # μ-independent part of the resolvent
+    bands = _projected_eigen(H_ks, Σ_stat, idx)
 
     # filling for initial guesses
-    n_min = _filling_mu(H_k, Σ_stat, Σ_A, μ_min)
-    n_max = _filling_mu(H_k, Σ_stat, Σ_A, μ_max)
+    n_min = _filling_mu(bands, Σ_dyn, μ_min, n_tol)
+    n_max = _filling_mu(bands, Σ_dyn, μ_max, n_tol)
     n_min <= n_fill <= n_max || throw(
         ArgumentError(
             lazy"violating n(μ_min) = $(n_min) <= n_fill <= n(μ_max) = $(n_max)",
@@ -150,11 +162,15 @@ function find_chemical_potential(
     for _ in 1:b_max
         n_bisect += 1
         μ_new = 0.5 * (μ_min + μ_max)
-        n_new = _filling_mu(H_k, Σ_stat, Σ_A, μ_new)
+        n_new = _filling_mu(bands, Σ_dyn, μ_new, n_tol)
         n_new > n_fill ? μ_max = μ_new : μ_min = μ_new
         (μ_max - μ_min) < μ_tol && break
     end
     @debug "chemical potential bisection" n_bisect μ_new μ_min μ_max n_fill n_new
+    (μ_max - μ_min) < μ_tol || @warn(
+        "bisection used up `b_max` steps without reaching `μ_tol`",
+        b_max, μ_tol, bracket = μ_max - μ_min,
+    )
 
     return μ_new, n_new
 end
@@ -174,33 +190,44 @@ function _arrowhead_eigen(
     return eigen!(Hermitian(foo))
 end
 
-# Calculate filling for given chemical potential μ.
-# Weight within `tol` of the Fermi level is shared evenly.
-function _filling_mu(H_k, Σ_stat, Σ_A::AbstractMatrix, μ; tol::Real = 1.0e-8)
-    n_b = LinearAlgebra.checksquare(first(H_k)) # number of bands
-    z = zero(float(real(eltype(Σ_A))))
-    result = Threads.Atomic{typeof(z)}(z)
+# Diagonalize `H_k + Σ_stat` for every k-point and return the eigenvalues `E`
+# together with the projection of the eigenvectors to `idx`.
+function _projected_eigen(H_ks, Σ_stat, idx)
+    T = float(promote_type(eltype(eltype(H_ks)), eltype(Σ_stat)))
+    n_k = length(H_ks)
+    Es = Vector{Vector{real(T)}}(undef, n_k)
+    Vs = Vector{Matrix{T}}(undef, n_k)
+    Threads.@threads for i in eachindex(H_ks)
+        F = eigen!(Hermitian(Matrix{T}(H_ks[i] + Σ_stat)))
+        Es[i] = F.values
+        Vs[i] = Matrix(view(F.vectors, idx, :)') # U^† P
+    end
+    return Es, Vs
+end
 
-    Threads.@threads for i in eachindex(H_k)
-        # NOTE: `Σ_A` is a sparse (block arrowhead matrix).
-        # One can use Krylov methods to approximate spectrum
-        # if full decomposition is too slow.
-        F = _arrowhead_eigen(Σ_A, H_k[i], Σ_stat, μ, n_b)
-        n_loc = z # local filling
-        @inbounds for j in axes(Σ_A, 2)
-            ϵ = F.values[j]
-            v = @view F.vectors[1:n_b, j]
-            # Trace of v*v' is sum of values squared.
-            if ϵ < -tol
-                n_loc += sum(abs2, v)
-            elseif ϵ <= tol
-                n_loc += sum(abs2, v) / 2
-            end
+# filling at chemical potential μ using the contour integral of left half-plane
+function _filling_mu(bands, Σ_dyn::PolesSumBlock, μ::Real, n_tol::Real)
+    Es, Vs = bands
+    n_k = length(Es)
+    n_b = length(first(Es))
+    R = real(eltype(first(Vs)))
+
+    function integrand(y)
+        z = im * y
+        Σ = evaluate(Σ_dyn, z) # shared by all k-points
+        result = Threads.Atomic{R}(zero(R))
+        Threads.@threads for i in 1:n_k
+            D = Diagonal(inv.(z + μ .- Es[i]))
+            DV = D * Vs[i]
+            g = Vs[i]' * DV # downfolded G_0
+            X = (I - Σ * g) \ (Σ * (Vs[i]' * (D * DV)))
+            Threads.atomic_add!(result, real(tr(D) + tr(X)))
         end
-        Threads.atomic_add!(result, n_loc)
+        return result[] / n_k
     end
 
-    return result[] /= length(H_k)
+    val, _ = quadgk(integrand, 0, Inf; atol = π * n_tol, maxevals = 10_000)
+    return n_b / 2 + val / π
 end
 
 function _issorted_and_unique(grid::AbstractVector{<:Real})

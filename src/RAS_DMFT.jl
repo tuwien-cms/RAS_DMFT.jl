@@ -7,6 +7,7 @@ using Fermions.Lanczos
 using Fermions.Wavefunctions
 using HDF5
 using LinearAlgebra
+using QuadGK: quadgk
 using SpecialFunctions
 using StaticArrays: @SMatrix, SDiagonal, SMatrix
 
