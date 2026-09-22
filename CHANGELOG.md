@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not the running total ([#247](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/247)) (1c6a88a)
 - `self_energy_IFG` → `self_energy_schur`
   ([#259](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/259)) (61d7bad)
+- `find_chemical_potential` evaluates the filling as a contour integral
+  along the imaginary axis and updates the resolvent with the Woodbury identity
+  ([#265](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/265)) (17ac045)
 
 ### Removed
 
