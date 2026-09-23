@@ -200,11 +200,6 @@ function greens_function_local(
     return G
 end
 
-function _check_half_width(D::Real)
-    D > 0 || throw(DomainError(D, "negative half-bandwidth"))
-    return nothing
-end
-
 # For each grid point, bisect the interval to its neighbors and compute the pole weight
 # as the mass of the distribution with `cdf(Inf) = total`.
 function _bethe_bisection_weights(locations, cdf, total = 1)
@@ -229,4 +224,9 @@ function _bethe_bisection_weights(locations, cdf, total = 1)
         end
     end
     return weights
+end
+
+function _check_half_width(D::Real)
+    D > 0 || throw(DomainError(D, "negative half-bandwidth"))
+    return nothing
 end

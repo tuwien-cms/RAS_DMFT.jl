@@ -130,6 +130,7 @@ function Base.size(H_nat::NaturalImpurityOrbital)
     n = 2 + n_valence(H_nat) + n_conduction(H_nat)
     return (n, n)
 end
+
 Base.size(H_nat::NaturalImpurityOrbital, d::Integer) = d <= 2 ? size(H_nat)[d] : 1
 
 """
@@ -198,15 +199,6 @@ function natural_impurity_orbital(Δ::PolesSum, ϵ_mf::Real; tol::Real = 1.0e-8)
     b_c = -a_v * t_imp_c
 
     return NaturalImpurityOrbital(H_ib, i_v, i_c, b_v, b_c, e_v, t_v, e_c, t_c)
-end
-
-# `v` must be normalized
-function _tridiagonalize(locs::AbstractVector{<:Real}, v::AbstractVector{<:Real})
-    Q = [v nullspace(v')]
-    # Lower triangle preserves the first basis vector (impurity).
-    _, _, α, β = LAPACK.hetrd!('L', Q' * Diagonal(locs) * Q)
-    map!(abs, β)
-    return α, β
 end
 
 """
@@ -389,6 +381,55 @@ function natural_impurity_orbital_ras_operator(
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 
+# Add the on-site energies and nearest-neighbor hopping of given chain
+# (valence or conduction) inside the RAS bit component.
+function _add_chain_to_bit(
+        H::Operator,
+        c,
+        σ,
+        H_nat::NaturalImpurityOrbital,
+        is_valence::Bool,
+        offset_bit::Int,
+        n_chain::Int,
+    )
+    e = is_valence ? H_nat.e_v : H_nat.e_c
+    t = is_valence ? H_nat.t_v : H_nat.t_c
+    for i in 1:n_chain
+        site_bit = offset_bit + i
+        # bath site
+        H += e[i] * c[site_bit, σ]' * c[site_bit, σ]
+        if i == 1
+            # hopping chain start ↔ i and chain start ↔ b
+            H_i = is_valence ? H_nat.i_v : H_nat.i_c
+            H_b = is_valence ? H_nat.b_v : H_nat.b_c
+            H += H_i * c[1, σ]' * c[site_bit, σ]
+            H += H_i * c[site_bit, σ]' * c[1, σ]
+            H += H_b * c[2, σ]' * c[site_bit, σ]
+            H += H_b * c[site_bit, σ]' * c[2, σ]
+        else
+            # hopping to previous neighbor
+            H += t[i - 1] * c[site_bit - 1, σ]' * c[site_bit, σ]
+            H += t[i - 1] * c[site_bit, σ]' * c[site_bit - 1, σ]
+        end
+    end
+    return H
+end
+
+# Add the impurity on-site energy and the impurity-mirror-site hopping.
+# This block is identical for the full and RAS operator constructions.
+function _add_impurity_terms(H, c, H_nat::NaturalImpurityOrbital, ϵ_imp)
+    for σ in axes(c, 2)
+        # impurity i
+        H += ϵ_imp * c[1, σ]' * c[1, σ]
+        # mirror site b
+        H += H_nat.H_ib[2, 2] * c[2, σ]' * c[2, σ]
+        # hopping i ↔ b
+        H += H_nat.H_ib[2, 1] * c[1, σ]' * c[2, σ]
+        H += H_nat.H_ib[2, 1] * c[2, σ]' * c[1, σ]
+    end
+    return H
+end
+
 # Same as `natural_impurity_orbital_operator` but with `n_v_bit === n_c_bit === 0`.
 function _natural_impurity_orbital_ras_operator_zero(
         H_nat::NaturalImpurityOrbital{T},
@@ -431,51 +472,11 @@ function _natural_impurity_orbital_ras_operator_zero(
     return RASOperator(H_bit, mixed, esite, ehop, n_bit, n_v_vector, n_c_vector, p)
 end
 
-# Add the impurity on-site energy and the impurity-mirror-site hopping.
-# This block is identical for the full and RAS operator constructions.
-function _add_impurity_terms(H, c, H_nat::NaturalImpurityOrbital, ϵ_imp)
-    for σ in axes(c, 2)
-        # impurity i
-        H += ϵ_imp * c[1, σ]' * c[1, σ]
-        # mirror site b
-        H += H_nat.H_ib[2, 2] * c[2, σ]' * c[2, σ]
-        # hopping i ↔ b
-        H += H_nat.H_ib[2, 1] * c[1, σ]' * c[2, σ]
-        H += H_nat.H_ib[2, 1] * c[2, σ]' * c[1, σ]
-    end
-    return H
-end
-
-# Add the on-site energies and nearest-neighbor hopping of given chain
-# (valence or conduction) inside the RAS bit component.
-function _add_chain_to_bit(
-        H::Operator,
-        c,
-        σ,
-        H_nat::NaturalImpurityOrbital,
-        is_valence::Bool,
-        offset_bit::Int,
-        n_chain::Int,
-    )
-    e = is_valence ? H_nat.e_v : H_nat.e_c
-    t = is_valence ? H_nat.t_v : H_nat.t_c
-    for i in 1:n_chain
-        site_bit = offset_bit + i
-        # bath site
-        H += e[i] * c[site_bit, σ]' * c[site_bit, σ]
-        if i == 1
-            # hopping chain start ↔ i and chain start ↔ b
-            H_i = is_valence ? H_nat.i_v : H_nat.i_c
-            H_b = is_valence ? H_nat.b_v : H_nat.b_c
-            H += H_i * c[1, σ]' * c[site_bit, σ]
-            H += H_i * c[site_bit, σ]' * c[1, σ]
-            H += H_b * c[2, σ]' * c[site_bit, σ]
-            H += H_b * c[site_bit, σ]' * c[2, σ]
-        else
-            # hopping to previous neighbor
-            H += t[i - 1] * c[site_bit - 1, σ]' * c[site_bit, σ]
-            H += t[i - 1] * c[site_bit, σ]' * c[site_bit - 1, σ]
-        end
-    end
-    return H
+# `v` must be normalized
+function _tridiagonalize(locs::AbstractVector{<:Real}, v::AbstractVector{<:Real})
+    Q = [v nullspace(v')]
+    # Lower triangle preserves the first basis vector (impurity).
+    _, _, α, β = LAPACK.hetrd!('L', Q' * Diagonal(locs) * Q)
+    map!(abs, β)
+    return α, β
 end

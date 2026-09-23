@@ -286,6 +286,7 @@ function Base.convert(
     wgts = convert.(Matrix{N}, weights(P))
     return PolesSumBlock{M, N}(locs, wgts)
 end
+
 Base.convert(::Type{PolesSumBlock{A, B}}, P::PolesSumBlock{A, B}) where {A, B} = P
 
 function Base.copy(P::PolesSumBlock{A, B}) where {A, B}
@@ -303,6 +304,7 @@ function Base.size(P::PolesSumBlock)
         throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))
     return size(first(weights(P)))
 end
+
 function Base.size(P::PolesSumBlock, i)
     isempty(P) &&
         throw(ArgumentError("cannot determine block size of an empty PolesSumBlock"))

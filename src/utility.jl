@@ -1,17 +1,5 @@
 # utility functions
 
-function _with_blas_threads(f, t::Int = 1)
-    t_old = BLAS.get_num_threads()
-    t_old == t && return f()
-
-    BLAS.set_num_threads(t)
-    try
-        return f()
-    finally
-        BLAS.set_num_threads(t_old)
-    end
-end
-
 """
     init_system(
         Δ::PolesSum,
@@ -196,21 +184,6 @@ function _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
     return n_b, n_c
 end
 
-# Diagonalize `H_k + Σ_stat` for every k-point and return the eigenvalues `E`
-# together with the projection of the eigenvectors to `idx`.
-function _projected_eigen(H_ks, Σ_stat, idx)
-    T = float(promote_type(eltype(eltype(H_ks)), eltype(Σ_stat)))
-    n_k = length(H_ks)
-    Es = Vector{Vector{real(T)}}(undef, n_k)
-    Vs = Vector{Matrix{T}}(undef, n_k)
-    Threads.@threads for i in eachindex(H_ks)
-        F = eigen!(Hermitian(Matrix{T}(H_ks[i] + Σ_stat)))
-        Es[i] = F.values
-        Vs[i] = Matrix(view(F.vectors, idx, :)') # U^† P
-    end
-    return Es, Vs
-end
-
 # filling at chemical potential μ using the contour integral of left half-plane
 function _filling_mu(bands, Σ_dyn::PolesSumBlock, μ::Real, n_tol::Real)
     Es, Vs = bands
@@ -242,4 +215,31 @@ function _issorted_and_unique(grid::AbstractVector{<:Real})
     # isequal() treats -0.0 and 0.0 as unequal although both are zero.
     count(iszero, grid) <= 1 || throw(ArgumentError("grid has duplicate zeros"))
     return true
+end
+
+# Diagonalize `H_k + Σ_stat` for every k-point and return the eigenvalues `E`
+# together with the projection of the eigenvectors to `idx`.
+function _projected_eigen(H_ks, Σ_stat, idx)
+    T = float(promote_type(eltype(eltype(H_ks)), eltype(Σ_stat)))
+    n_k = length(H_ks)
+    Es = Vector{Vector{real(T)}}(undef, n_k)
+    Vs = Vector{Matrix{T}}(undef, n_k)
+    Threads.@threads for i in eachindex(H_ks)
+        F = eigen!(Hermitian(Matrix{T}(H_ks[i] + Σ_stat)))
+        Es[i] = F.values
+        Vs[i] = Matrix(view(F.vectors, idx, :)') # U^† P
+    end
+    return Es, Vs
+end
+
+function _with_blas_threads(f, t::Int = 1)
+    t_old = BLAS.get_num_threads()
+    t_old == t && return f()
+
+    BLAS.set_num_threads(t)
+    try
+        return f()
+    finally
+        BLAS.set_num_threads(t_old)
+    end
 end
