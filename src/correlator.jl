@@ -111,7 +111,8 @@ function correlator_minus(
 end
 
 # Warn if the correlator `C` carries spectral weight on poles of the wrong sign.
-# Never happens on exact arithmetic.
+# In exact arithmetic this happens only if `ψ0` is not the ground state,
+# e.g. when a different particle-number sector has a lower energy.
 function _warn_wrong_sign(C::AbstractPolesSum, side::Symbol)
     side in (:plus, :minus) || throw(ArgumentError("`side` must be `:plus` or `:minus`"))
     neg = side === :plus
@@ -122,8 +123,13 @@ function _warn_wrong_sign(C::AbstractPolesSum, side::Symbol)
     n = count(f, locs)
     rng = neg ? (1:n) : (lastindex(locs) - n + 1):lastindex(locs)
     weight = sum(tr(weights(C)[i]) for i in rng)
+    loc = neg ? locs[1] : locs[end] # farthest from zero
     name = neg ? "C+" : "C-"
     word = neg ? "negative" : "positive"
-    @warn "$name has $word spectral weight $weight on $n pole(s)"
+    action = neg ? "Adding" : "Removing"
+    sector = neg ? "one more" : "one fewer"
+    @warn "$name has $word spectral weight $weight on $n pole(s), the farthest at $loc. " *
+        "$action a particle lowers the energy: is ψ0 the lowest state, " *
+        "or has the sector with $sector particle a lower energy?"
     return nothing
 end

@@ -83,6 +83,13 @@ using Test
         @test_logs (:warn, r"C\- has positive spectral weight 2\.0 on 2 pole\(s\)") begin
             RAS_DMFT._warn_wrong_sign(P, :minus)
         end
+        # the message names the farthest pole and the likely sector
+        @test_logs (:warn, r"the farthest at -0\.5\. Adding.*one more particle") begin
+            RAS_DMFT._warn_wrong_sign(P, :plus)
+        end
+        @test_logs (:warn, r"the farthest at 2\.0\. Removing.*one fewer particle") begin
+            RAS_DMFT._warn_wrong_sign(P, :minus)
+        end
         @test_nowarn RAS_DMFT._warn_wrong_sign(PolesSum([1.0, 2.0], [2.0, 1.0]), :plus)
 
         # block
