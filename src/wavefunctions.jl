@@ -1,5 +1,15 @@
 # Methods related to `Fermions.Wavefunctions` module.
 
+# The mean-field ground state in the natural impurity orbital basis is Eq. (E8) of
+# https://doi.org/10.1103/PhysRevB.90.085102,
+#   (a_v i_↑^† + a_c b_↑^†) (a_v i_↓^† + a_c b_↓^†) on the filled valence sites,
+# with a_v, a_c the impurity amplitudes in the occupied and empty subspace.
+# It expands into four determinants:
+# i doubly occupied (a_v^2), the singlet (a_v a_c, twice), and b doubly occupied (a_c^2).
+# That state is exact for U = 0, but at finite U each double occupation costs U.
+# For large U it needs more Krylov steps to converge.
+# Hence the start keeps only the singlet and drops the double occupations.
+
 """
     Wavefunction_singlet(
         D::Type, L_v::Integer, L_c::Integer, V_v::Integer, V_c::Integer
