@@ -55,6 +55,7 @@ export
     hybridization_function_bethe_grid,
     hybridization_function_bethe_grid_hubbard3,
     hybridization_function_bethe_simple,
+    hybridization_function_local,
     init_system,
     inverse,
     location,
