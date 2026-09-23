@@ -131,15 +131,7 @@ function find_chemical_potential(
         n_tol::Real = 1.0e-8,
     )
     # check input
-    n_b = LinearAlgebra.checksquare(first(H_ks))
-    n_c = length(idx)
-    allequal(size, H_ks)::Bool || throw(DimensionMismatch("different matrix sizes in H_ks"))
-    size(Σ_stat) == (n_b, n_b) ||
-        throw(DimensionMismatch("size of Σ_stat does not match H_ks"))
-    (size(Σ_dyn) == (n_c, n_c))::Bool ||
-        throw(DimensionMismatch("size of Σ_dyn does not match idx"))
-    allunique(idx) || throw(ArgumentError("idx has duplicate orbitals"))
-    all(in(1:n_b), idx) || throw(ArgumentError("idx outside range"))
+    _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
     μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
     n_tol > 0 || throw(DomainError(n_tol, "n_tol is not positive"))
 
@@ -188,6 +180,20 @@ function _arrowhead_eigen(
     # one fused broadcast, no temporaries
     view(foo, 1:n_b, 1:n_b) .= H .+ Σ_stat .- μ * one(H)
     return eigen!(Hermitian(foo))
+end
+
+# check lattice input
+function _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
+    n_b = LinearAlgebra.checksquare(first(H_ks))
+    n_c = length(idx)
+    allequal(size, H_ks)::Bool || throw(DimensionMismatch("different matrix sizes in H_ks"))
+    size(Σ_stat) == (n_b, n_b) ||
+        throw(DimensionMismatch("size of Σ_stat does not match H_ks"))
+    (size(Σ_dyn) == (n_c, n_c))::Bool ||
+        throw(DimensionMismatch("size of Σ_dyn does not match idx"))
+    allunique(idx) || throw(ArgumentError("idx has duplicate orbitals"))
+    all(in(1:n_b), idx) || throw(ArgumentError("idx outside range"))
+    return n_b, n_c
 end
 
 # Diagonalize `H_k + Σ_stat` for every k-point and return the eigenvalues `E`
