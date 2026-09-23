@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by its impurity-mirror block and its valence and conduction chains,
   together with the accessors `n_valence` and `n_conduction`
   ([#242](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/242)) (addb83a)
+- `hybridization_function_local` to obtain the mean-field impurity level
+  and the hybridization function of the correlated orbitals on a grid
+  from the lattice Hamiltonian and self-energy,
+  evaluating the correlated block in the upper half-plane
+  instead of diagonalizing the block arrowhead matrix at every k-point
+  ([#266](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/266)) (277c1db)
 
 ### Changed
 
