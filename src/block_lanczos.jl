@@ -36,7 +36,10 @@ function block_lanczos(
     for j in 2:N
         # orthonormalize Q_new
         @inbounds Q_new, B[j - 1] = _orthonormalize_lowdin(Q_new)
-        # TODO: Stop early if norm is small.
+        # No reorthogonalization against earlier blocks, which costs O(j) per step.
+        # It leaves the spectrum unchanged and only adds ghost copies of converged poles.
+        # Without it, B stays finite after the Krylov space is exhausted,
+        # so there is no small norm(B) to stop early on.
         # cycle for new step
         Q_curr, Q_old, Q_new = Q_new, Q_curr, Q_old
         # Q_new = H Q
