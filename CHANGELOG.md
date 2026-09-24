@@ -96,6 +96,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([#255](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/255)) (2335f63)
 - `find_chemical_potential` counts a level at the Fermi level half
   ([#256](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/256)) (4bd5028)
+- Löwdin orthonormalization in `anderson_matrix`, `PolesContinuedFractionBlock`,
+  and `block_lanczos_full_ortho` stays orthonormal for ill-conditioned, rank-deficient,
+  and zero blocks
+  ([#270](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/270)) (60a9db0)
+- `anderson_matrix` throws an `ArgumentError` for rank-deficient amplitudes,
+  such as `self_energy_schur` at $U = 0$,
+  instead of adding a spurious site or throwing `DimensionMismatch`
+  ([#270](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/270)) (ba91343)
 
 ## [0.11.0] - 2026-08-14
 
