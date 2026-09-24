@@ -31,9 +31,9 @@ xlims!(ax, first(W), last(W))
 #md save("G0.svg", f); nothing # hide
 #md # ![](G0.svg)
 
-# For calculations, we need to discretize this to ``N`` points:
-N = 51 # number of points
-grid = range(-D, D; length = N) # linear grid (others are possible)
+# For calculations, we need to discretize this to ``n_\mathrm{bath}`` points:
+n_bath = 51 # number of bath sites
+grid = range(-D, D; length = n_bath) # linear grid (others are possible)
 G0 = greens_function_bethe_grid(grid)
 
 # This returns a `PolesSum` instance
@@ -103,8 +103,7 @@ d_occ = n[1, 1 // 2] * n[1, -1 // 2] # double occupation
 # Δ(ω) = \frac{D^2}{4} G(ω).
 # ```
 # We can create one using
-n_bath = 51 # number of bath sites
-grid = range(-4 * D, 4 * D; length = N) # linear grid
+grid = range(-4 * D, 4 * D; length = n_bath) # linear grid
 Δ0 = hybridization_function_bethe_grid(grid)
 remove_zero_weight!(Δ0)
 # Here, we set our grid to ``[-4D, 4D]``.
