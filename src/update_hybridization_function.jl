@@ -1,16 +1,19 @@
-# Bethe lattice trick: Δ(z) = Δ0(z + μ - Σ(z))
+# Bethe lattice trick: Δ(z) = Δ0(z + μ - Σ_H - Σ(z))
 
 """
     update_hybridization_function(
         Δ0::PolesSum{R,R}, μ::R, Σ_H::R, Σ::PolesSum{R,R}
     ) where {R<:Real}
 
-
-Calculate the new hybridization function in [`PolesSum`](@ref) representation.
+Calculate the new hybridization function in [`PolesSum`](@ref) representation
+from the Hartree term `Σ_H` and the dynamic self-energy `Σ`,
 
 ```math
-Δ(ω) = Δ_0(ω + μ - Σ(ω))
+Δ(ω) = Δ_0(ω + μ - Σ_\\mathrm{H} - Σ(ω)) \\, .
 ```
+
+The relation holds for the Bethe lattice only,
+see [`hybridization_function_local`](@ref) for a general lattice.
 """
 function update_hybridization_function(
         Δ0::PolesSum{R, R}, μ::R, Σ_H::R, Σ::PolesSum{R, R}
