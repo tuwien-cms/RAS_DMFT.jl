@@ -18,6 +18,9 @@ end
 Calculate scaling factor ``B_0`` and Anderson matrix ``H_\\mathrm{A}``
 given a sum of poles `P`.
 
+Throw an `ArgumentError` for a `PolesSumBlock` whose amplitudes have lower rank
+than the block size, where no orthonormal impurity basis exists.
+
 Reference: [DOI](https://doi.org/10.48550/arXiv.2605.04974), appendix A3d
 """
 function anderson_matrix end

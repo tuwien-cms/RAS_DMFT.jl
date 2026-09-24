@@ -36,10 +36,14 @@ end
 function anderson_matrix(P::PolesSumBlock)
     N = length(P)
     n_b = size(P, 1) # block size
+    V = vcat(amplitudes(P)...)
+    # same cut as _orthonormalize_lowdin
+    r = rank(V; rtol = sqrt(eps(real(float(eltype(V))))))
+    r == n_b ||
+        throw(ArgumentError(lazy"amplitudes have rank $(r) below block size $(n_b)"))
 
     return _with_blas_threads(Threads.nthreads()) do
         H_LP = Diagonal(repeat(locations(P); inner = n_b))
-        V = vcat(amplitudes(P)...)
         R_a, B_0 = _orthonormalize_lowdin(V)
 
         # Find orthogonal complement to create basis (Eq. A41).

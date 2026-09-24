@@ -33,6 +33,11 @@ using Test
         @test norm(locations(P_new) - locations(P)) < 20 * eps()
         # norm of each weight difference
         @test all(<(50 * eps()), norm.(weights(P_new) .- weights(P)))
+
+        # rank-deficient: every amplitude is parallel to [1, 1]
+        P = PolesSumBlock([-1.0, 0.0, 1.0], [0.3 0.5 0.2; 0.3 0.5 0.2])
+        @test_throws ArgumentError anderson_matrix(P)
+        @test_throws ArgumentError self_energy_schur(P)
     end # Anderson matrix
 
     @testset "arrowhead matrix" begin
