@@ -5,29 +5,6 @@ using Test
 
 @testset "orthogonalization" begin
     @testset "_orthonormalize_SVD" begin
-        # in-place
-        q1 = RASWavefunction(
-            Dict(zero(UInt8) => rand(5), one(UInt8) => rand(5)), 4, 1, 1, 1,
-        )
-        q2 = RASWavefunction(Dict(zero(UInt8) => rand(5)), 4, 1, 1, 1)
-        Q = [q1 q2]
-        Q_new = similar(Q)
-        S_sqrt = Matrix{Float64}(undef, 2, 2)
-        V1 = Vector{Float64}(undef, 2)
-        M1 = similar(S_sqrt)
-        RAS_DMFT._orthonormalize_SVD!(V1, M1, S_sqrt, Q_new, Q)
-        @test ishermitian(S_sqrt)
-        # Q_int^† Q_int = 𝟙
-        foo = Matrix{Float64}(undef, 2, 2)
-        mul!(foo, Q_new', Q_new)
-        @test norm(foo - I) < 1000 * eps()
-        # V = Q_int B
-        bar = similar(Q)
-        mul!(bar, Q_new, S_sqrt) # Q = Q_new S^{1/2}
-        for i in axes(Q, 2)
-            @test norm(bar[i] - Q[i]) < 1000 * eps()
-        end
-
         # Matrix{ComplexF64}
         Q = rand(ComplexF64, 10, 4)
         @inferred RAS_DMFT._orthonormalize_SVD(Q)

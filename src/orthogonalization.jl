@@ -67,13 +67,24 @@ Forming ``S`` squares the condition number ``κ`` of `Q`,
 so the new states are orthonormal only up to about ``ϵ κ^2``.
 """
 function _orthonormalize_SVD(Q::AbstractMatrix)
+    # Explanation available under ch. 3.2 of Martin's thesis.
+    # https://doi.org/10.11588/heidok.00029305
     q = size(Q, 2)
     T = scalartype(eltype(Q))
+    S = Matrix{T}(undef, q, q)
+    mul!(S, Q', Q) # overlap matrix
+    F = eigen(hermitianpart!(S))
+    tol = maximum(F.values) * sqrt(eps(real(T)))
+    # orthonormalize states
+    Λ = map(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), F.values) # Λ^{-1/2}
+    S_inv_sqrt = F.vectors * (Diagonal(Λ) * F.vectors')
+    hermitianpart!(S_inv_sqrt) # S^{-1/2}
     Q_new = similar(Q)
-    V1 = Vector{real(T)}(undef, q)
-    M1 = Matrix{T}(undef, q, q)
-    S_sqrt = similar(M1)
-    _orthonormalize_SVD!(V1, M1, S_sqrt, Q_new, Q)
+    mul!(Q_new, Q, S_inv_sqrt) # Q_new = Q S^{-1/2}
+    # B = S^{1/2}
+    map!(λ -> λ >= tol ? sqrt(λ) : zero(λ), Λ, F.values) # Λ^{1/2}
+    S_sqrt = F.vectors * (Diagonal(Λ) * F.vectors')
+    hermitianpart!(S_sqrt)
     return Q_new, S_sqrt
 end
 
@@ -92,31 +103,4 @@ function _orthonormalize_SVD(M::AbstractMatrix{<:Number})
     B = F.V * Diagonal(F.S) * F.Vt
     hermitianpart!(B)
     return Q, B
-end
-
-# Explanation available under ch. 3.2 of Martin's thesis.
-# https://doi.org/10.11588/heidok.00029305
-function _orthonormalize_SVD!(
-        # user supplies all containers to calculate in-place
-        V1::AbstractVector{<:Real}, # container for Λ^{±1/2}
-        M1::AbstractMatrix{<:T}, # container
-        S_sqrt::AbstractMatrix{<:T}, # store S^{1/2}
-        Q_new::AbstractMatrix, # store orthonormal states
-        Q::AbstractMatrix, # states to orthonormalize
-    ) where {T <: Number}
-    mul!(M1, Q', Q) # overlap matrix
-    F = eigen(hermitianpart!(M1))
-    tol = maximum(F.values) * sqrt(eps(real(T)))
-    # orthonormalize states
-    map!(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), V1, F.values) # Λ^{-1/2}
-    mul!(M1, Diagonal(V1), F.vectors')
-    mul!(S_sqrt, F.vectors, M1)
-    hermitianpart!(S_sqrt) # S^{-1/2}
-    mul!(Q_new, Q, S_sqrt) # Q_new = Q S^{-1/2}
-    # B = S^{1/2}
-    map!(λ -> λ >= tol ? sqrt(λ) : zero(λ), V1, F.values) # Λ^{1/2}
-    mul!(M1, Diagonal(V1), F.vectors')
-    mul!(S_sqrt, F.vectors, M1) # S^{1/2}
-    hermitianpart!(S_sqrt)
-    return nothing
 end

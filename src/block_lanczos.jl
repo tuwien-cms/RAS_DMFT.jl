@@ -21,8 +21,6 @@ function block_lanczos(
     Q_new = similar(Q1)
     Q_old = similar(Q1)
     # containers to reduce allocations
-    Q_int = zero(Q1) # int ≙ intermediate
-    V1 = Vector{T}(undef, q)
     M1 = Matrix{T}(undef, q, q)
 
     # first step
@@ -37,11 +35,8 @@ function block_lanczos(
     # successive steps
     for j in 2:N
         # orthonormalize Q_new
-        zerovector!(Q_int)
-        @inbounds B[j - 1] = Matrix{T}(undef, q, q)
-        _orthonormalize_SVD!(V1, M1, B[j - 1], Q_int, Q_new)
+        @inbounds Q_new, B[j - 1] = _orthonormalize_SVD(Q_new)
         # TODO: Stop early if norm is small.
-        Q_new, Q_int = Q_int, Q_new
         # cycle for new step
         Q_curr, Q_old, Q_new = Q_new, Q_curr, Q_old
         # Q_new = H Q
