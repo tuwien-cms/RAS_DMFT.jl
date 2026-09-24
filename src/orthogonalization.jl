@@ -18,34 +18,6 @@ function _orthogonalize_states!(
 end
 
 """
-    orthonormalize_GramSchmidt!(V::AbstractMatrix{<:Number})
-
-Orthonormalize given states (columns) using Gram-Schmidt.
-"""
-function _orthonormalize_GramSchmidt!(V::AbstractMatrix{<:Number})
-    tol = 1000 * eps()
-    for i in axes(V, 2)
-        v = view(V, :, i) # state
-        if norm(v)^2 < tol
-            v .= 0 # set state to zero
-            continue
-        end
-        for j in 1:(i - 1)
-            # orthogonalize against previous state
-            vj = view(V, :, j)
-            a = vj ⋅ v
-            axpy!(-a, vj, v) # v -= a*vj
-        end
-        if norm(v)^2 < tol
-            v .= 0 # set state to zero
-            continue
-        end
-        normalize!(v)
-    end
-    return V
-end
-
-"""
     _orthonormalize_SVD(Q::AbstractMatrix)
 
 Löwdin orthonormalization for given states `Q` by diagonalizing their overlap matrix.

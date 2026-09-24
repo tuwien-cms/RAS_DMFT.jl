@@ -56,24 +56,6 @@ using Test
         @test issymmetric(S_sqrt)
     end # _orthonormalize_SVD
 
-    @testset "_orthonormalize_GramSchmidt!" begin
-        V1 = [0 0 3; 0 0 0; 100 * eps() 2 1]
-        @test RAS_DMFT._orthonormalize_GramSchmidt!(V1) === V1
-        @test V1 == [0 0 1; 0 0 0; 0 1 0]
-        # applying again keeps it unchanged
-        foo = copy(V1)
-        @test RAS_DMFT._orthonormalize_GramSchmidt!(V1) == foo
-
-        # no allocations
-        V2 = [0 3 1; 0 0 1; 100 * eps() 8 0]
-        @test iszero(@allocated(RAS_DMFT._orthonormalize_GramSchmidt!(V2)))
-
-        # last column becomes linearly dependent
-        V3 = [1 0 1; 0 1 1; 0 0 0]
-        RAS_DMFT._orthonormalize_GramSchmidt!(V3)
-        @test V3 == [1 0 0; 0 1 0; 0 0 0]
-    end # _orthonormalize_GramSchmidt!
-
     @testset "_orthogonalize_states!" begin
         Q_new1 = rand(ComplexF64, 8, 4)
         Q_old0 = rand(ComplexF64, 8, 4)
