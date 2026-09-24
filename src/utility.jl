@@ -48,6 +48,10 @@ and hybridization `Δ0`.
 ```math
 T_\\mathrm{K} = \\sqrt{\\frac{UΔ_0}{2}} \\exp(\\frac{π ϵ(ϵ+U)}{2UΔ_0})
 ```
+
+`Δ0` is the hybridization at the Fermi level,
+i.e. the half-width of the non-interacting impurity resonance,
+``Δ_0 = -\\mathrm{Im}~Δ(0 + \\mathrm{i}0^+)``.
 """
 function temperature_kondo(U::Real, ϵ::Real, Δ0::Real)
     return sqrt(U * Δ0 / 2) * exp(π * ϵ * (ϵ + U) / (2 * U * Δ0))
