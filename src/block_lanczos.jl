@@ -35,7 +35,7 @@ function block_lanczos(
     # successive steps
     for j in 2:N
         # orthonormalize Q_new
-        @inbounds Q_new, B[j - 1] = _orthonormalize_SVD(Q_new)
+        @inbounds Q_new, B[j - 1] = _orthonormalize_lowdin(Q_new)
         # TODO: Stop early if norm is small.
         # cycle for new step
         Q_curr, Q_old, Q_new = Q_new, Q_curr, Q_old
@@ -103,7 +103,7 @@ function block_lanczos_full_ortho(
             norm(v) < tol && (v .= 0)
         end
 
-        @inbounds Q[j], B[j - 1] = _orthonormalize_SVD(Q_new)
+        @inbounds Q[j], B[j - 1] = _orthonormalize_lowdin(Q_new)
         if norm(B[j - 1]) < tol
             # stop early
             @debug "block Lanczos stopping early: norm(B[$(j - 1)]) = $(norm(B[j - 1]))"

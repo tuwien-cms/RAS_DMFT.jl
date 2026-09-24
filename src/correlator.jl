@@ -44,7 +44,7 @@ function correlator(
     for i in eachindex(V)
         V[i] = O[i] * ψ0
     end
-    W, scale = _orthonormalize_SVD(V)
+    W, scale = _orthonormalize_lowdin(V)
     locations, amplitudes = block_lanczos(H, W, n_kryl)
 
     # create block tridiagonal pole representation which is then diagonalized

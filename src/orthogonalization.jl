@@ -18,11 +18,11 @@ function _orthogonalize_states!(
 end
 
 """
-    _orthonormalize_SVD(Q::AbstractMatrix)
+    _orthonormalize_lowdin(M::AbstractMatrix)
 
-Löwdin orthonormalization for given states `Q` by diagonalizing their overlap matrix.
+Löwdin orthonormalization for given states `M` by diagonalizing their overlap matrix.
 
-Calculate overlap matrix ``S = Q^† Q`` and diagonalize
+Calculate overlap matrix ``S = M^† M`` and diagonalize
 
 ```math
 \\begin{aligned}
@@ -32,36 +32,36 @@ S^{-1/2} &= U Λ^{-1/2} U^†.
 \\end{aligned}
 ```
 
-Objects of interest are ``Q S^{-1/2}`` and ``S^{1/2}``.
+Return ``Q = M S^{-1/2}`` and ``B = S^{1/2}``, such that ``M = Q B``.
 
 This serves states without a singular value decomposition, such as `RASWavefunction`.
-Forming ``S`` squares the condition number ``κ`` of `Q`,
-so the new states are orthonormal only up to about ``ϵ κ^2``.
+Forming ``S`` squares the condition number ``κ`` of `M`,
+so the columns of `Q` are orthonormal only up to about ``ϵ κ^2``.
 """
-function _orthonormalize_SVD(Q::AbstractMatrix)
+function _orthonormalize_lowdin(M::AbstractMatrix)
     # Explanation available under ch. 3.2 of Martin's thesis.
     # https://doi.org/10.11588/heidok.00029305
-    q = size(Q, 2)
-    T = scalartype(eltype(Q))
-    S = Matrix{T}(undef, q, q)
-    mul!(S, Q', Q) # overlap matrix
+    m = size(M, 2)
+    T = scalartype(eltype(M))
+    S = Matrix{T}(undef, m, m)
+    mul!(S, M', M) # overlap matrix
     F = eigen(hermitianpart!(S))
     tol = maximum(F.values) * sqrt(eps(real(T)))
     # orthonormalize states
     Λ = map(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), F.values) # Λ^{-1/2}
     S_inv_sqrt = F.vectors * (Diagonal(Λ) * F.vectors')
     hermitianpart!(S_inv_sqrt) # S^{-1/2}
-    Q_new = similar(Q)
-    mul!(Q_new, Q, S_inv_sqrt) # Q_new = Q S^{-1/2}
+    Q = similar(M)
+    mul!(Q, M, S_inv_sqrt) # Q = M S^{-1/2}
     # B = S^{1/2}
     map!(λ -> λ >= tol ? sqrt(λ) : zero(λ), Λ, F.values) # Λ^{1/2}
-    S_sqrt = F.vectors * (Diagonal(Λ) * F.vectors')
-    hermitianpart!(S_sqrt)
-    return Q_new, S_sqrt
+    B = F.vectors * (Diagonal(Λ) * F.vectors')
+    hermitianpart!(B)
+    return Q, B
 end
 
 # Use SVD decomposition, not overlap matrix S to avoid inverse S^{-1/2}.
-function _orthonormalize_SVD(M::AbstractMatrix{<:Number})
+function _orthonormalize_lowdin(M::AbstractMatrix{<:Number})
     F = svd(M)
     tol = sqrt(eps(eltype(F.S))) * first(F.S)
     for i in eachindex(F.S)

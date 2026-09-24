@@ -29,7 +29,7 @@ using Test
         v2 = q_dag * ψ0
         V0 = [v1 v2]
         # Löwdin orthonormalization
-        W, _ = RAS_DMFT._orthonormalize_SVD(V0)
+        W, _ = RAS_DMFT._orthonormalize_lowdin(V0)
         # Block Lanczos
         a, b = RAS_DMFT.block_lanczos(H, W, n_kryl)
         @test length(a) == n_kryl

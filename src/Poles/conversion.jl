@@ -40,7 +40,7 @@ function anderson_matrix(P::PolesSumBlock)
     return _with_blas_threads(Threads.nthreads()) do
         H_LP = Diagonal(repeat(locations(P); inner = n_b))
         V = vcat(amplitudes(P)...)
-        R_a, B_0 = _orthonormalize_SVD(V)
+        R_a, B_0 = _orthonormalize_lowdin(V)
 
         # Find orthogonal complement to create basis (Eq. A41).
         U1 = [R_a nullspace(R_a')]
@@ -114,7 +114,7 @@ function PolesContinuedFractionBlock(P::PolesSumBlock)
         i2 = i * n2
         Q1[i1:i2, :] = amp[i]
     end
-    Q1, scl = _orthonormalize_SVD(Q1)
+    Q1, scl = _orthonormalize_lowdin(Q1)
     # set small values to zero
     tol = sqrt(eps()) * norm(scl)
     @inbounds for i in eachindex(scl)
