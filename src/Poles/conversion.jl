@@ -41,8 +41,6 @@ function anderson_matrix(P::PolesSumBlock)
         H_LP = Diagonal(repeat(locations(P); inner = n_b))
         V = vcat(amplitudes(P)...)
         R_a, B_0 = _orthonormalize_SVD(V)
-        _orthonormalize_GramSchmidt!(R_a) # numerical instability
-        _orthonormalize_GramSchmidt!(R_a) # numerical instability
 
         # Find orthogonal complement to create basis (Eq. A41).
         U1 = [R_a nullspace(R_a')]
@@ -117,8 +115,6 @@ function PolesContinuedFractionBlock(P::PolesSumBlock)
         Q1[i1:i2, :] = amp[i]
     end
     Q1, scl = _orthonormalize_SVD(Q1)
-    _orthonormalize_GramSchmidt!(Q1) # numerical instability
-    _orthonormalize_GramSchmidt!(Q1) # numerical instability
     # set small values to zero
     tol = sqrt(eps()) * norm(scl)
     @inbounds for i in eachindex(scl)

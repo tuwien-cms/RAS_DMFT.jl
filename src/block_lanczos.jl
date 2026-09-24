@@ -91,7 +91,6 @@ function block_lanczos_full_ortho(
     B = Vector{Matrix{T}}(undef, N - 1)
     Q = Vector{Matrix{T}}(undef, N)
     # containers to reduce allocations
-    V1 = Vector{real(T)}(undef, q)
     M1 = Matrix{T}(undef, q, q)
 
     # first step
@@ -109,11 +108,7 @@ function block_lanczos_full_ortho(
             norm(v) < tol && (v .= 0)
         end
 
-        @inbounds B[j - 1] = Matrix{T}(undef, q, q)
-        @inbounds Q[j] = Matrix{T}(undef, n, q)
-        _orthonormalize_SVD!(V1, M1, B[j - 1], Q[j], Q_new)
-        _orthonormalize_GramSchmidt!(Q[j]) # numerical instability
-        _orthonormalize_GramSchmidt!(Q[j]) # numerical instability
+        @inbounds Q[j], B[j - 1] = _orthonormalize_SVD(Q_new)
         if norm(B[j - 1]) < tol
             # stop early
             @debug "block Lanczos stopping early: norm(B[$(j - 1)]) = $(norm(B[j - 1]))"

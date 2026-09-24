@@ -48,7 +48,7 @@ end
 """
     _orthonormalize_SVD(Q::AbstractMatrix)
 
-Löwdin orthonormalization (Singular value decomposition SVD) for given states `Q`.
+Löwdin orthonormalization for given states `Q` by diagonalizing their overlap matrix.
 
 Calculate overlap matrix ``S = Q^† Q`` and diagonalize
 
@@ -61,16 +61,37 @@ S^{-1/2} &= U Λ^{-1/2} U^†.
 ```
 
 Objects of interest are ``Q S^{-1/2}`` and ``S^{1/2}``.
+
+This serves states without a singular value decomposition, such as `RASWavefunction`.
+Forming ``S`` squares the condition number ``κ`` of `Q`,
+so the new states are orthonormal only up to about ``ϵ κ^2``.
 """
 function _orthonormalize_SVD(Q::AbstractMatrix)
     q = size(Q, 2)
-    T = _scalartype(eltype(Q))
+    T = scalartype(eltype(Q))
     Q_new = similar(Q)
     V1 = Vector{real(T)}(undef, q)
     M1 = Matrix{T}(undef, q, q)
     S_sqrt = similar(M1)
     _orthonormalize_SVD!(V1, M1, S_sqrt, Q_new, Q)
     return Q_new, S_sqrt
+end
+
+# Use SVD decomposition, not overlap matrix S to avoid inverse S^{-1/2}.
+function _orthonormalize_SVD(M::AbstractMatrix{<:Number})
+    F = svd(M)
+    tol = sqrt(eps(eltype(F.S))) * first(F.S)
+    for i in eachindex(F.S)
+        # drop direction i
+        if F.S[i] <= tol
+            F.S[i] = 0
+            F.U[:, i] .= 0
+        end
+    end
+    Q = F.U * F.Vt
+    B = F.V * Diagonal(F.S) * F.Vt
+    hermitianpart!(B)
+    return Q, B
 end
 
 # Explanation available under ch. 3.2 of Martin's thesis.
@@ -99,6 +120,3 @@ function _orthonormalize_SVD!(
     hermitianpart!(S_sqrt)
     return nothing
 end
-
-_scalartype(::Type{T}) where {T <: Number} = T
-_scalartype(::Type{WF}) where {WF <: RASWavefunction} = scalartype(WF)

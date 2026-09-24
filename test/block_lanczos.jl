@@ -72,5 +72,19 @@ using Test
         @test length(Q) == 2
         @test Q[1] == Q1
         @test norm(Q[2] - [0 0; 0 -1 / sqrt(2); 0 0; 0 1 / sqrt(2)]) < 10 * eps()
+
+        # deflation in a rotated basis: sector {1, 2, 3} outlives sector {4}
+        H = [0 1 0 0; 1 0 1 0; 0 1 0 0; 0 0 0 0.5]
+        Q1 = [1 1; 0 0; 0 0; 1 -1] / sqrt(2)
+        A, B, Q = block_lanczos_full_ortho(H, Q1, 4)
+        @test length(A) == 3
+        @test norm(A[1] - [1 -1; -1 1] / 4) < 10 * eps()
+        @test norm(A[2]) < 10 * eps()
+        @test norm(A[3]) < 10 * eps()
+        @test length(B) == 2
+        @test norm(B[1] - ones(2, 2) / 2) < 10 * eps()
+        @test norm(B[2] - ones(2, 2) / 2) < 10 * eps()
+        @test norm(Q[2] - [0 0; 1 1; 0 0; 0 0] / sqrt(2)) < 10 * eps()
+        @test norm(Q[3] - [0 0; 0 0; 1 1; 0 0] / sqrt(2)) < 10 * eps()
     end # block_lanczos_full_ortho
 end # block_lanczos
