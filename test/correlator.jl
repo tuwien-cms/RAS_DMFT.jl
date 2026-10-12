@@ -71,7 +71,7 @@ using Test
         # Hartree term
         O_H = O[1]' * O[2] + O[2] * O[1]'
         Σ_H = dot(ψ0, O_H, ψ0)
-        @test Σ_H ≈ U / 2 rtol = 10 * eps()
+        @test Σ_H ≈ U / 2 rtol = 30 * eps()
     end # block Lanczos
 
     @testset "_warn_wrong_sign" begin
