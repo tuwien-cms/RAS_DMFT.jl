@@ -50,12 +50,6 @@ jobs:
           git config --global
           url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/tuwien-cms/".insteadOf
           "https://github.com/tuwien-cms/"
-      - name: add Fermions.jl
-        run: |
-          julia --project -e '
-            using Pkg
-            Pkg.add(url="https://github.com/tuwien-cms/Fermions.jl", rev="main")
-          '
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
