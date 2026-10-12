@@ -10,6 +10,9 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[sources]
+Fermions = {url = "https://github.com/tuwien-cms/Fermions.jl", rev = "main"}
+
 [compat]
 Aqua = "0.8.16"
 Distributions = "0.25.100"

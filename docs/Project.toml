@@ -7,6 +7,9 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 RAS_DMFT = "a6c836f4-75b2-4167-a711-17703ee59b5f"
 
+[sources]
+Fermions = {url = "https://github.com/tuwien-cms/Fermions.jl", rev = "main"}
+
 [compat]
 CairoMakie = "0.15.13"
 Changelog = "1.1.0"
