@@ -28,8 +28,8 @@ using Test
     @testset "wave function" begin
         @test ndet0(4, 2, 2, 10, 11) == 36
         @test ndet1(4, 2, 2, 10, 11) == 24 * 2 * (10 + 11)
-        @test ndet2(4, 2, 2, 10, 11) == 16160 # didn't try all by hand
-        @test ndet(4, 2, 2, 2, 10, 11) == 36 + 1008 + 16160
+        @test ndet2(4, 1, 1, 2, 5) == 641 # by brute-force enumeration
+        @test ndet(4, 2, 2, 2, 10, 11) == 36 + 1008 + 16176
         @test_throws DomainError ndet(4, 2, 2, 3, 10, 11)
     end # wave function
 end # Combinatorics

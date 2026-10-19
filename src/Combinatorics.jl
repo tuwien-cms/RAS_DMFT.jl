@@ -104,8 +104,8 @@ function ndet2(nbit::Int, nup::Int, ndown::Int, nfilled::Int, nempty::Int)
     result += binomial(nbit, nup - 2) * binomial(nbit, ndown) * binomial(nempty, 2)
     result += binomial(nbit, nup) * binomial(nbit, ndown + 2) * binomial(nfilled, 2)
     result += binomial(nbit, nup) * binomial(nbit, ndown - 2) * binomial(nempty, 2)
-    result += binomial(nbit, nup + 1) * binomial(nbit, ndown + 1) * nfilled * nempty
-    result += binomial(nbit, nup - 1) * binomial(nbit, ndown - 1) * nfilled * nempty
+    result += binomial(nbit, nup + 1) * binomial(nbit, ndown + 1) * nfilled^2
+    result += binomial(nbit, nup - 1) * binomial(nbit, ndown - 1) * nempty^2
     result += binomial(nbit, nup + 1) * binomial(nbit, ndown - 1) * nfilled * nempty
     result += binomial(nbit, nup - 1) * binomial(nbit, ndown + 1) * nfilled * nempty
     result += binomial(nbit, nup) * binomial(nbit, ndown) * nfilled * nempty
