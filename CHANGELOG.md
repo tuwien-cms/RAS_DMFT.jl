@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ndet2` counts two holes in the valence sites or two electrons in the conduction sites
   correctly, which was wrong whenever `nfilled ≠ nempty`
   ([#280](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/280)) (866b33a)
+- `PolesContinuedFractionBlock(::PolesSumBlock)` keeps negative and complex entries
+  of the scale instead of setting them to zero or throwing
+  ([#282](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/282)) (210516c)
 
 ## [0.12.0] - 2026-09-25
 
