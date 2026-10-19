@@ -119,10 +119,10 @@ function PolesContinuedFractionBlock(P::PolesSumBlock)
         Q1[i1:i2, :] = amp[i]
     end
     Q1, scl = _orthonormalize_lowdin(Q1)
-    # set small values to zero
+    # drop noise
     tol = sqrt(eps()) * norm(scl)
     @inbounds for i in eachindex(scl)
-        scl[i] < tol && (scl[i] = 0)
+        abs(scl[i]) < tol && (scl[i] = 0)
     end
     # block Lanczos with full orthogonalization
     locs, amps, _ = block_lanczos_full_ortho(A, Q1, n1 * n2)

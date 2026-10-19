@@ -126,6 +126,13 @@ using Test
         @test norm(locations(PS) - [1, 2]) < 10 * eps()
         @test norm(weight(PS, 1) - [1 0; 0 1]) < 10 * eps()
         @test norm(weight(PS, 2) - [0 0; 0 1]) < 10 * eps()
+        # negative off-diagonal scale
+        P = PolesSumBlock([-1.0, 1.0], [[2.0 -1.0; -1.0 2.0], [1.0 -0.5; -0.5 1.0]])
+        PS = PolesSumBlock(PolesContinuedFractionBlock(P))
+        merge_degenerate_poles!(PS, 5 * eps())
+        @test norm(locations(PS) - locations(P)) < 8 * eps()
+        @test norm(weight(PS, 1) - weight(P, 1)) < 9 * eps()
+        @test norm(weight(PS, 2) - weight(P, 2)) < 20 * eps()
     end # block
 
     @testset "block → scalar" begin
