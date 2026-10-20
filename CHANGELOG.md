@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `merge_negative_weight!` throws an `ArgumentError` for a total weight within rounding noise
+  of zero instead of returning an empty `PolesSum`
+  ([#286](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/286)) (f226887)
+
 ### Fixed
 
 - `ndet2` counts two holes in the valence sites or two electrons in the conduction sites
@@ -15,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PolesContinuedFractionBlock(::PolesSumBlock)` keeps negative and complex entries
   of the scale instead of setting them to zero or throwing
   ([#282](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/282)) (210516c)
+- `merge_negative_weight!` conserves the first moment whenever the mean lies within the locations,
+  which was lost when an interior split pushed an outermost pole negative
+  ([#286](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/286)) (f226887)
 
 ## [0.12.0] - 2026-09-25
 
