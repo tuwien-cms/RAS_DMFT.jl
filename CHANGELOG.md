@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `merge_small_weight!` keeps the last pole instead of throwing a `BoundsError`
   when all poles have weight `<= tol`
   ([#289](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/289)) (8002e51)
+- `grid_interpolate`, `greens_function_bethe_grid`, and `greens_function_bethe_grid_hubbard3`
+  accept integer grids instead of throwing an `InexactError`
+  ([#291](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/291)) (c475393)
+- `grid_interpolate` throws an `ArgumentError` for fewer than 2 points
+  instead of a `BoundsError`
+  ([#291](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/291)) (c475393)
 
 ## [0.12.0] - 2026-09-25
 
