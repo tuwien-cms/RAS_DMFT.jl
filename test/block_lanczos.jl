@@ -72,6 +72,9 @@ using Test
         @test length(Q) == 2
         @test Q[1] == Q1
         @test norm(Q[2] - [0 0; 0 -1 / sqrt(2); 0 0; 0 1 / sqrt(2)]) < 10 * eps()
+        # same Krylov space at small energy scale
+        A, _, _ = block_lanczos_full_ortho(1.0e-7 * H, Q1, 4)
+        @test length(A) == 2
 
         # deflation in a rotated basis: sector {1, 2, 3} outlives sector {4}
         H = [0 1 0 0; 1 0 1 0; 0 1 0 0; 0 0 0 0.5]

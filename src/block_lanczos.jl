@@ -76,7 +76,7 @@ Returns main diagonal `A`, lower diagonal `B` and states `Q`.
 function block_lanczos_full_ortho(
         H::AbstractMatrix{T1}, Q1::Matrix{T2}, N::Integer
     ) where {T1 <: Number, T2 <: Number}
-    tol = sqrt(1000 * eps())
+    tol = sqrt(1000 * eps()) * maximum(abs, diag(H))
     T = promote_type(T1, T2)
     n, q = size(Q1)
 
@@ -103,11 +103,11 @@ function block_lanczos_full_ortho(
         for k in axes(Q_new, 2)
             # check for vectors with small magnitude and set to zero
             v = view(Q_new, :, k)
-            norm(v) < tol && (v .= 0)
+            norm(v) <= tol && (v .= 0)
         end
 
         @inbounds Q[j], B[j - 1] = _orthonormalize_lowdin(Q_new)
-        if norm(B[j - 1]) < tol
+        if norm(B[j - 1]) <= tol
             # stop early
             @debug "block Lanczos stopping early: norm(B[$(j - 1)]) = $(norm(B[j - 1]))"
             deleteat!(A, j:N)
