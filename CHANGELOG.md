@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `merge_negative_weight!` conserves the first moment whenever the mean lies within the locations,
   which was lost when an interior split pushed an outermost pole negative
   ([#286](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/286)) (f226887)
+- `self_energy_schur` no longer returns a zero self-energy for energies in large units,
+  such as meV
+  ([#287](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/287)) (64e0cd2)
 
 ## [0.12.0] - 2026-09-25
 
