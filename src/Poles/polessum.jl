@@ -149,91 +149,67 @@ end
     merge_negative_weight!(P::PolesSum)
 
 Remove negative weights of `P` such that
-the zeroth (total weight) and first moment are conserved.
+the zeroth ``m_0`` (total weight) and first moment ``m_1`` are conserved.
 
-For each pole with negative weight at index `i`,
-the weight is merged to neighbors using the law of levers.
+The locations are kept, only weight is moved between them by the law of levers.
+A negative interior pole is split onto its two neighbors,
+a negative outermost pole onto the next two poles by extrapolation.
 
 !!! warning
-    For negative outermost poles, the first moment is **not conserved**.
+    The first moment is conserved iff ``a_1 ≤ m_1 / m_0 ≤ a_n``,
+    where ``a_1`` and ``a_n`` are the outermost locations.
 
-Poles with zero weight after merging are automatically removed.
+Poles with zero weight after merging are removed.
 """
 function merge_negative_weight!(P::PolesSum)
     # check input
     m0 = moment(P, 0)
-    m0 >= 0 || throw(
-        ArgumentError(lazy"total weight is negative: $(m0)."),
+    # extrapolation amplifies the rounding of a cancelling sum
+    tol = sqrt(eps()) * sum(abs, weights(P))
+    m0 > tol || throw(
+        ArgumentError(lazy"total weight $(m0) is not above the noise level $(tol)"),
     )
 
     locs = locations(P)
     wgts = weights(P)
-    i = 1
-    while i <= length(P)
-        wgts[i] > 0 && (i += 1; continue)
 
-        if iszero(wgts[i])
-            deleteat!(locs, i)
-            deleteat!(wgts, i)
-            continue
-        end
-
-        # single pole with negative weight
-        i == 1 && length(P) == 1 && throw(
-            ArgumentError(lazy"Single pole has negative weight $(wgts[1])."),
-        )
-
-        # first pole
-        if i == 1
-            wgts[2] += wgts[1]
-            deleteat!(locs, 1)
-            deleteat!(wgts, 1)
-            continue
-        end
-
-        # last pole
-        if i == length(P)
-            wgts[end - 1] += wgts[end]
-            deleteat!(locs, i)
-            deleteat!(wgts, i)
-            i -= 1
-            continue
-        end
-
-        # search leftward for compensation
-        j = i - 1
-        while true
-            # lever rule split between j and i+1
-            f_left = (locs[i + 1] - locs[i]) / (locs[i + 1] - locs[j])
-            f_right = 1 - f_left
-            need_left = -f_left * wgts[i]  # amount needed from left
-
-            if wgts[j] >= need_left
-                # w_j can fully compensate w_i.
-                wgts[j] -= need_left
-                wgts[i + 1] += f_right * wgts[i]
-                deleteat!(locs, i)
-                deleteat!(wgts, i)
-                i = j
-                break
-            else
-                # w_j can't fully compensate w_i.
-                # Find fraction f ∈ (0, 1) which can be merged such that w_j becomes 0.
-                # w_j + f f_l w_i == 0
-                wgts[i] += wgts[j] / f_left
-                wgts[i + 1] -= f_right / f_left * wgts[j]
-                deleteat!(locs, j)
-                deleteat!(wgts, j)
-                j -= 1
-                i -= 1
-
-                # no more left neighbors
-                j < 1 && break
-            end
+    # interior poles
+    i = 2
+    while i < length(P)
+        if wgts[i] < 0
+            _merge_lever!(locs, wgts, i, i - 1, i + 1)
+            i = max(i - 1, 2) # left neighbor may have turned negative
+        else
+            i += 1
         end
     end
 
-    return P
+    # outermost poles
+    μ = moment(P, 1) / m0
+    # merge into two neighbors if first moment can be conserved
+    while length(P) >= 3
+        n = length(P)
+        if wgts[1] < 0 && locs[2] <= μ
+            _merge_lever!(locs, wgts, 1, 2, 3)
+        elseif wgts[n] < 0 && μ <= locs[n - 1]
+            _merge_lever!(locs, wgts, n, n - 1, n - 2)
+        else
+            break
+        end
+    end
+    # only zeroth moment can be conserved
+    while length(P) >= 2 && wgts[1] < 0
+        popfirst!(locs)
+        w = popfirst!(wgts)
+        wgts[1] += w
+    end
+    while length(P) >= 2 && wgts[end] < 0
+        pop!(locs)
+        w = pop!(wgts)
+        wgts[end] += w
+    end
+
+    return remove_zero_weight!(P)
 end
 
 """
@@ -288,6 +264,17 @@ function spectral_function_loggaussian(P::PolesSum, ω::AbstractVector{<:Real}, 
 end
 
 weight(P::PolesSum, i::Integer) = weights(P)[i]
+
+# Delete pole at index `i` and split its weight onto poles `j` and `k`.
+# Conserve the zeroth and first moment.
+function _merge_lever!(locs, wgts, i, j, k)
+    f = (locs[k] - locs[i]) / (locs[k] - locs[j])
+    wgts[j] += f * wgts[i]
+    wgts[k] += (1 - f) * wgts[i]
+    deleteat!(locs, i)
+    deleteat!(wgts, i)
+    return nothing
+end
 
 function Base.:+(A::PolesSum{LA, WA}, B::PolesSum{LB, WB}) where {LA, WA, LB, WB}
     L = promote_type(LA, LB)

@@ -295,12 +295,12 @@ using Test
             @test locations(P) == [0.0]
             @test weights(P) == [1.75]
 
-            # total weight zero
+            # total weight zero, or zero up to noise
             locs = [0.0, 1.0, 5.0]
-            wgts = [-1.0, 0.5, 0.5]
-            P = merge_negative_weight!(PolesSum(locs, wgts))
-            @test locations(P) == Float64[]
-            @test weights(P) == Float64[]
+            @test_throws ArgumentError merge_negative_weight!(PolesSum(locs, [-1.0, 0.5, 0.5]))
+            @test_throws ArgumentError merge_negative_weight!(
+                PolesSum(locs, [-1.0, 0.5, 0.5 + 1.0e-10]),
+            )
 
             # symmetric case
             locs = [-2.0, -0.5, 0.0, 0.5, 2.0]
@@ -315,6 +315,20 @@ using Test
             P = merge_negative_weight!(PolesSum(locs, wgts))
             @test locations(P) == [-1.0, 1.5]
             @test weights(P) == [1.7, 4.3]
+
+            # last pole merged into two previous
+            locs = [0.0, 1.0, 2.0]
+            wgts = [-0.125, 1.5, -0.375]
+            P = merge_negative_weight!(PolesSum(locs, wgts))
+            @test locations(P) == [0.0, 1.0]
+            @test weights(P) == [0.25, 0.75]
+
+            # outermost pole merged twice, first moment conserved
+            locs = [0.0, 1.0, 2.0, 3.0]
+            wgts = [-1.0, 0.5, 2.5, 1.0]
+            P = merge_negative_weight!(PolesSum(locs, wgts))
+            @test locations(P) == [2.0, 3.0]
+            @test weights(P) == [0.5, 2.5]
         end # merge_negative_weight!
 
         @testset "merge_small_weight!" begin
