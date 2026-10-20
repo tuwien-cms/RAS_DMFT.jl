@@ -69,11 +69,7 @@ function PolesSumBlock(
 end
 
 """
-    PolesSumBlock(
-        locs::AbstractVector{A},
-        amps::AbstractMatrix{B},
-        tol::Real = 0
-    ) where {A, B}
+    PolesSumBlock(locs::AbstractVector{A}, amps::AbstractMatrix{B}) where {A, B}
 
 Create a new instance of [`PolesSumBlock`](@ref) by supplying locations `locs`
 and amplitudes `amps`.
@@ -81,8 +77,8 @@ and amplitudes `amps`.
 The ``i``-th column of `amps` is interpreted as the vector ``\\vec{b}_i``
 and the weight as the outer product ``W_i = \\vec{b}_i \\vec{b}^†_i``.
 
-The value `tol` determines to tolerance for location degeneracy.
-If `abs(locs[i] - locs[j]) <= tol`, they are deemed to be degenerate.
+Weights of equal locations are summed.
+To merge nearby locations, call [`merge_degenerate_poles!`](@ref) afterwards.
 
 ```jldoctest
 julia> locs = 0:1;
@@ -99,14 +95,9 @@ julia> weights(P) == [[5 4+8im; 4-8im 16], [9 18+15im; 18-15im 61]]
 true
 ```
 """
-function PolesSumBlock(
-        locs::AbstractVector{A},
-        amps::AbstractMatrix{B},
-        tol::Real = 0
-    ) where {A, B}
+function PolesSumBlock(locs::AbstractVector{A}, amps::AbstractMatrix{B}) where {A, B}
     # check input
     Base.require_one_based_indexing(locs, amps)
-    tol < 0 && throw(ArgumentError("negative tol"))
     length(locs) == size(amps, 2) || throw(DimensionMismatch("locs and amps size mismatch"))
 
     n = length(locs)
@@ -125,15 +116,11 @@ function PolesSumBlock(
         b = @view amps[:, i]
         w = b * b'
         i += 1
-        while i <= n && locs[i] - l <= tol
+        while i <= n && locs[i] == l
             # merge degenerate location
             b = @view amps[:, i]
             w .+= b * b'
             i += 1
-        end
-        if abs(l) <= tol
-            # enforce pole at zero
-            l = zero(A)
         end
         push!(loc_new, l)
         push!(wgt_new, w)

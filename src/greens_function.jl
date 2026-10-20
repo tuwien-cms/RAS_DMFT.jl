@@ -141,7 +141,6 @@ end
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
         μ::Real;
-        tol_location::Real = 0,
         tol_weight::Real = tol_weight_default(Σ_dyn),
     )
 
@@ -152,9 +151,10 @@ and self-energy ``Σ(z)``.
 G_\\mathrm{loc}(z) = \\frac{1}{N_k} ∑_k \\frac{1}{z + μ - H_k - Σ(z)} .
 ```
 
+Only equal locations are merged;
+merge nearby ones with [`merge_degenerate_poles!`](@ref).
+
 # Arguments
-- `tol_location::Real = 0`: treat locations less or equal than this value
-  in `G_loc` as degenerate
 - `tol_weight::Real = tol_weight_default(Σ_dyn)`:
   treat weights in `Σ_dyn` at or below this value as zero
 """
@@ -163,7 +163,6 @@ function greens_function_local(
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
         μ::Real;
-        tol_location::Real = 0,
         tol_weight::Real = tol_weight_default(Σ_dyn),
     )
     # check input
@@ -194,7 +193,7 @@ function greens_function_local(
         end
         locs, amps
     end
-    G = PolesSumBlock(locs, amps, tol_location)
+    G = PolesSumBlock(locs, amps)
     rmul!(G, inv(n_k))
 
     return G

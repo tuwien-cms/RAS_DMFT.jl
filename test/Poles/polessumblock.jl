@@ -48,12 +48,12 @@ using Test
             @test P.locations == [0, 1]
             @test P.weights == [[5 4 + 8im; 4 - 8im 16], [9 18 + 15im; 18 - 15im 61]]
 
-            # correct merging of degenerate poles
-            locs = [-3.0, -2.5, -2.75]
-            amps = [1 5 3; 2 6 4]
-            P = PolesSumBlock(locs, amps, 0.25)
-            @test P.locations == [-3.0, -2.5]
-            @test P.weights == [[10 14; 14 20], [25 30; 30 36]]
+            # merge equal locations only
+            locs = [-2.5, nextfloat(-2.5), -2.5]
+            amps = [1 1 3; 2 0 4]
+            P = PolesSumBlock(locs, amps)
+            @test P.locations == [-2.5, nextfloat(-2.5)]
+            @test P.weights == [[10 14; 14 20], [1 0; 0 0]]
 
             # single pole
             locs = [0.0]
