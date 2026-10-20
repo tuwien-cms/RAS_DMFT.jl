@@ -163,8 +163,10 @@ end
 
 Merge poles with weight `<= tol` to its neighbors.
 
-A given pole is split locally using the law of levers.
-This conserves the zeroth and first moment for scalars.
+A given pole is split onto its two neighbors using the law of levers,
+which conserves the zeroth and first moment.
+The first and last pole have one neighbor only and are added to it,
+which conserves the zeroth moment only.
 For block weights, the pole size is measured by the largest eigenvalue.
 A single remaining pole is kept, as it has no neighbor to take its weight.
 """
