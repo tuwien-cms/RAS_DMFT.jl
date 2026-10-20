@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of zero instead of returning an empty `PolesSum`
   ([#286](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/286)) (f226887)
 
+### Removed
+
+- `tol` argument of `PolesSumBlock(locs, amps)`
+  and `tol_location` keyword of `greens_function_local`,
+  which threw for two clusters on either side of zero;
+  merge nearby locations with `merge_degenerate_poles!` instead
+  ([#290](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/290)) (85f79a3)
+
 ### Fixed
 
 - `ndet2` counts two holes in the valence sites or two electrons in the conduction sites
