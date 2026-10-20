@@ -63,7 +63,7 @@ function greens_function_bethe_grid(grid::AbstractVector{<:Real}, D::Real = 1.0)
     # check input
     _issorted_and_unique(grid)
     s = Semicircle(D)
-    locations = Vector(grid)
+    locations = float(Vector(grid))
     weights = _bethe_bisection_weights(locations, x -> cdf(s, x))
     return PolesSum(locations, weights)
 end
@@ -84,7 +84,7 @@ function greens_function_bethe_grid_hubbard3(
     # check input
     _issorted_and_unique(grid)
     s = Semicircle(D)
-    locations = Vector(grid)
+    locations = float(Vector(grid))
     weights = _bethe_bisection_weights(
         locations, x -> cdf(s, x + U / 2) + cdf(s, x - U / 2), 2
     )

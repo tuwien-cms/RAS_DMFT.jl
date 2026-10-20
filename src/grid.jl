@@ -33,9 +33,10 @@ function grid_interpolate(a::AbstractVector{<:Real}, n::Int)
     # check input
     _issorted_and_unique(a)
     Base.require_one_based_indexing(a)
+    length(a) >= 2 || throw(ArgumentError("a needs at least 2 points"))
     n >= 1 || throw(ArgumentError("n must be positive"))
 
-    result = similar(a, length(a) * n + 1)
+    result = similar(a, float(eltype(a)), length(a) * n + 1)
     for i in eachindex(a)
         # calculate end points of interval
         if i == firstindex(a)

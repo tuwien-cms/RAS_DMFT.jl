@@ -91,6 +91,10 @@ using Test
             w1 = weight(G, 50)
             @test all(i -> i < w1, view(weights(G), 51:251))
             @test weight(G, 151) ≈ 0.0031830955461067956 atol = eps()
+            # integer grid
+            G = greens_function_bethe_grid([-1, 0, 1])
+            @test typeof(G) === PolesSum{Float64, Float64}
+            @test weights(G) ≈ [0.1955011094778853, 0.6089977810442294, 0.1955011094778853]
         end # grid
 
         @testset "grid Hubbard III" begin
@@ -114,6 +118,10 @@ using Test
             @test amplitudes(G)[51] == 0
             @test amplitudes(G)[66] ≈ 0.1783752245364157 atol = 10 * eps()
             @test moment(G, 0) ≈ 1 atol = 10 * eps()
+            # integer grid
+            G = greens_function_bethe_grid_hubbard3([-1, 0, 1])
+            @test typeof(G) === PolesSum{Float64, Float64}
+            @test weights(G) ≈ [0.1955011094778853, 0.6089977810442294, 0.1955011094778853]
         end # grid Hubbdard III
     end # Bethe lattice
 

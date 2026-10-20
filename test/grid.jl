@@ -38,5 +38,9 @@ using Test
             4.75,
             5.0,
         ]
+        # integer grid
+        @test grid_interpolate([1, 2, 3], 2) == [1.0, 1.25, 1.5, 2.0, 2.5, 2.75, 3.0]
+        # single point has no interval
+        @test_throws ArgumentError grid_interpolate([1.0], 2)
     end # grid interpolate
 end # grid
