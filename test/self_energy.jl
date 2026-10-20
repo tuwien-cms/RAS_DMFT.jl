@@ -60,6 +60,12 @@ using Test
         merge_small_weight!(Σ, tol)
         @test moment(Σ, 0) ≈ U^2 / 4 rtol = 80 * eps()
         @test moment(Σ, 1) ≈ 0 atol = 5.0e-10
+        # scale energy unit by 1000
+        k = 1000
+        D = Diagonal([k, 1])
+        C_k = PolesSumBlock(k .* locations(C), [D * w * D for w in weights(C)])
+        Σ_k = PolesSum(self_energy_schur(C_k), 1, 1)
+        @test moment(Σ_k, 0) ≈ k^2 * U^2 / 4 rtol = 200 * eps()
     end # Schur
 
     @testset "Schur block size four" begin

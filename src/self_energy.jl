@@ -97,6 +97,7 @@ function self_energy_schur(C::PolesSumBlock, block::Int = 1)
 
     # new scaling matrix
     F = eigen(B0_inv_sqr)
+    tol = maximum(F.values) * sqrt(eps(real(T)))
     D = map(λ -> λ >= tol ? 1 / sqrt(λ) : zero(λ), F.values)
     B0 = Hermitian(F.vectors * Diagonal(D) * F.vectors') # B0
     A1 = B0 * A1 * B0
