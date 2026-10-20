@@ -166,13 +166,14 @@ Merge poles with weight `<= tol` to its neighbors.
 A given pole is split locally using the law of levers.
 This conserves the zeroth and first moment for scalars.
 For block weights, the pole size is measured by the largest eigenvalue.
+A single remaining pole is kept, as it has no neighbor to take its weight.
 """
 function merge_small_weight!(P::AbstractPolesSum, tol::Real)
     # check input
     tol >= 0 || throw(ArgumentError("negative tol is invalid"))
     # loop over all poles
     i = 1
-    while i <= length(P)
+    while length(P) > 1 && i <= length(P)
         loc = location(P, i)
         wgt = weight(P, i)
         if _mag(wgt) > tol

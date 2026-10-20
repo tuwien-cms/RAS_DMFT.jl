@@ -307,6 +307,11 @@ using Test
             merge_small_weight!(P, 0)
             @test locations(P) == [2]
             @test weights(P) == [ones(2, 2)]
+            # single pole is kept
+            P = PolesSumBlock([1.0], [copy(W1)])
+            merge_small_weight!(P, tol)
+            @test locations(P) == [1.0]
+            @test weights(P) == [W1]
         end # merge_small_weight!
 
         @testset "moment" begin

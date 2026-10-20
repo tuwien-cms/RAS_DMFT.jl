@@ -356,6 +356,16 @@ using Test
             merge_small_weight!(P, 0)
             @test locations(P) == [2]
             @test weights(P) == [1]
+            # single pole is kept
+            P = PolesSum([1.0], [0.25])
+            merge_small_weight!(P, 1.0)
+            @test locations(P) == [1.0]
+            @test weights(P) == [0.25]
+            # all poles small, last one is kept
+            P = PolesSum([-1.0, 0.0, 1.0], [0.25, 0.25, 0.5])
+            merge_small_weight!(P, 1.0)
+            @test locations(P) == [1.0]
+            @test weights(P) == [1.0]
         end # merge_small_weight!
 
         @testset "moment" begin
