@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `PolesContinuedFractionBlock(::PolesSumBlock)`,
   no longer collapses poles at small energy scales
   ([#288](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/288)) (66f766d)
+- `merge_small_weight!` keeps the last pole instead of throwing a `BoundsError`
+  when all poles have weight `<= tol`
+  ([#289](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/289)) (8002e51)
 
 ## [0.12.0] - 2026-09-25
 
