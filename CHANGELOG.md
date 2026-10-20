@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `self_energy_schur` no longer returns a zero self-energy for energies in large units,
   such as meV
   ([#287](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/287)) (64e0cd2)
+- `block_lanczos_full_ortho`, and with it `PolesContinuedFraction(::PolesSum)`
+  and `PolesContinuedFractionBlock(::PolesSumBlock)`,
+  no longer collapses poles at small energy scales
+  ([#288](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/288)) (66f766d)
 
 ## [0.12.0] - 2026-09-25
 
