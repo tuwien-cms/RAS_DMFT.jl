@@ -34,7 +34,7 @@ with half-bandwidth `D` on `n_bath` poles.
 Poles are found by diagonalizing a tridiagonal matrix with hopping ``t=D/2``.
 
 See also
-[`greens_function_bethe_grid`](@ref).
+[`hybridization_function_bethe_grid`](@ref).
 """
 function hybridization_function_bethe_simple(n_bath::Int, D::Real = 1.0)
     # Take Green's function and rescale weights by D^2/4.
