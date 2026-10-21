@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `anderson_matrix`, and with it `inverse` and `self_energy_schur`,
   no longer set the BLAS thread count to the Julia thread count
   ([#293](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/293)) (ecfdf8f)
+- `find_chemical_potential` and `hybridization_function_local` warn
+  when an integral stops above `n_tol` or `tol`
+  ([#294](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/294)) (54e66b2)
 
 ### Removed
 
