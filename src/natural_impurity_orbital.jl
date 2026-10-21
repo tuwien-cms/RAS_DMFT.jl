@@ -314,7 +314,7 @@ Convert natural impurity orbital Hamiltonian to `RASOperator`.
 - `fs::FockSpace`: Fock Space used for the system
 - `n_v_bit::Int=1`: number of valence bath sites in bit component
 - `n_c_bit::Int=1`: number of conduction bath sites in bit component
-- `p::Int=1`: maximum excitation in bit component
+- `p::Int=1`: maximum excitation in vector component
 
 See also `RASOperator`.
 """
