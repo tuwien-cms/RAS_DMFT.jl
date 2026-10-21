@@ -17,7 +17,6 @@ function correlator(
     rmul!(v, inv(scale))
     locations, amplitudes = lanczos(H, v, n_kryl)
 
-    # NOTE: break Lanczos early if amplitude is small
     value, index = findmin(amplitudes)
     @debug "smallest amplitude b=$(value) at index $(index)/$(lastindex(amplitudes))"
 
