@@ -1,10 +1,9 @@
 """
     block_lanczos(
-        H::RASOperator, W::AbstractMatrix{<:WF}, n_kryl::Int
-    ) where {WF<:RASWavefunction}
+        H::RASOperator, Q1::AbstractMatrix{<:WF}, N::Integer
+    ) where {WF <: RASWavefunction}
 
-
-Block Lanczos algorithm for given operator `H`, states in `W` and `n_kryl` Krylov cycles.
+Block Lanczos algorithm for given operator `H`, start states `Q1` and `N` Krylov cycles.
 
 Returns main diagonal `A` and subdiagonal `B`.
 """
