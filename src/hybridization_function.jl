@@ -1,6 +1,6 @@
 # Various hybridization functions.
 
-# For the Bethe lattice take the  Green's function and rescale by D^/4
+# For the Bethe lattice take the Green's function and rescale by D^2/4
 # as Δ(ω) = D^2/4 G(ω).
 
 """
@@ -37,7 +37,7 @@ See also
 [`greens_function_bethe_grid`](@ref).
 """
 function hybridization_function_bethe_simple(n_bath::Int, D::Real = 1.0)
-    # Take Green's function and rescale weights by D/2.
+    # Take Green's function and rescale weights by D^2/4.
     Δ = greens_function_bethe_simple(n_bath, D)
     rmul!(Δ, D^2 / 4)
     return Δ
