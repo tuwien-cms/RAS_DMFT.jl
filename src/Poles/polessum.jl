@@ -221,7 +221,7 @@ lognormal broadening.
 Each pole is broadened as in NRG
 
 ```math
-b_i δ(ω - a_i) → b_i \\frac{\\mathrm{e}^{-b^2/4}}{\\sqrt{π}|a|b}
+b_i δ(ω - a_i) → b_i \\frac{\\mathrm{e}^{-b^2/4}}{\\sqrt{π}|a_i|b}
 \\exp\\left(-\\frac{\\ln^2(ω/a_i)}{b^2}\\right).
 ```
 
