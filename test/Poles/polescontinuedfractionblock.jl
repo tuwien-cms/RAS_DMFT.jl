@@ -47,6 +47,12 @@ using Test
         # # default scale
         P = PolesContinuedFractionBlock(locs, amps)
         @test P.scale == I
+        @test P.locations !== locs
+        @test P.amplitudes !== amps
+        # nearly Hermitian input
+        W = [1.0 1.0e-17; 0.0 1.0]
+        P = PolesContinuedFractionBlock([W, zeros(2, 2)], [W])
+        @test location(P, 1) == amplitude(P, 1) == [1.0 5.0e-18; 5.0e-18 1.0]
 
         # conversion of type
         P = PolesContinuedFractionBlock(locs, amps, scl)

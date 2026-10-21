@@ -53,7 +53,7 @@ locations `locs`,
 amplitudes `amps`,
 and scale `scl`.
 
-By default the scale is set to the identity matrix ``1``.
+By default the scale is set to the identity matrix ``I``.
 """
 function PolesContinuedFractionBlock(
         locs::AbstractVector{<:AbstractMatrix{<:A}},
@@ -77,6 +77,15 @@ function PolesContinuedFractionBlock(
     return PolesContinuedFractionBlock{A, B}(locs, amps, scl)
 end
 
+# scale is identity matrix
+function PolesContinuedFractionBlock(
+        locs::AbstractVector{<:AbstractMatrix{<:A}},
+        amps::AbstractVector{<:AbstractMatrix{<:B}},
+    ) where {A, B}
+    n = size(first(locs), 1)
+    return PolesContinuedFractionBlock(locs, amps, Matrix{B}(I, n, n))
+end
+
 # convert type
 function PolesContinuedFractionBlock{A, B}(P::PolesContinuedFractionBlock) where {A, B}
     return PolesContinuedFractionBlock{A, B}(
@@ -84,15 +93,6 @@ function PolesContinuedFractionBlock{A, B}(P::PolesContinuedFractionBlock) where
         map(i -> Matrix{B}(i), amplitudes(P)),
         Matrix{B}(scale(P)),
     )
-end
-
-# scale is identity matrix
-function PolesContinuedFractionBlock(
-        locs::AbstractVector{<:AbstractMatrix{<:A}},
-        amps::AbstractVector{<:AbstractMatrix{<:B}},
-    ) where {A, B}
-    scl = LinearAlgebra.I(size(first(locs), 1))
-    return PolesContinuedFractionBlock{A, B}(locs, amps, scl)
 end
 
 function evaluate(P::PolesContinuedFractionBlock, z::Number)
