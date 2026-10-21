@@ -216,7 +216,9 @@ function _filling_mu(bands, Σ_dyn::PolesSumBlock, μ::Real, n_tol::Real)
         return result[] / n_k
     end
 
-    val, _ = quadgk(integrand, 0, Inf; atol = π * n_tol, maxevals = 10_000)
+    atol = π * n_tol
+    val, err = quadgk(integrand, 0, Inf; atol, maxevals = 10_000)
+    err > atol && @warn "filling integral missed n_tol" μ err = err / π n_tol
     return n_b / 2 + val / π
 end
 

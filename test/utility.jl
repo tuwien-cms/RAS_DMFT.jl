@@ -135,6 +135,13 @@ using Test
             )
             @test μ0 ≈ 0 atol = 1.0e-12
             @test n0 ≈ 0.75 atol = 1.0e-12
+            # an unreachable tolerance exhausts maxevals
+            @test_logs (:warn, "filling integral missed n_tol") match_mode = :any begin
+                find_chemical_potential(
+                    H_ks, Σ_stat, Σ_dyn, [1], 0.5;
+                    μ_min = -1.0, μ_max = 0.6, b_max = 1, n_tol = 1.0e-300,
+                )
+            end
         end # PHS
 
         @testset "basis and ordering" begin

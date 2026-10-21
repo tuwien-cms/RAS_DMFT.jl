@@ -135,6 +135,12 @@ using Test
                 H_ks, Σ_stat, Σ_dyn, [1], μ, [0.0, 0.25, 1.0]; tol
             )
             @test only.(weights(Δ)) ≈ [0.0, 0.25, 0.0] atol = 1.0e-12
+            # an unreachable tolerance exhausts maxevals
+            @test_logs (:warn, "hybridization integral missed tol") match_mode = :any begin
+                hybridization_function_local(
+                    H_ks, Σ_stat, Σ_dyn, [1], μ, [0.0, 1.0]; tol = 1.0e-300
+                )
+            end
 
             # every orbital correlated: Δ vanishes for a single k-point
             Σ_dyn2 = PolesSumBlock([0.0], [zeros(2, 2)])

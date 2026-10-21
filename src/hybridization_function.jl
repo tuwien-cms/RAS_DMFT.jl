@@ -219,7 +219,9 @@ function hybridization_function_local(
             Δ_z, zΔ_m0 = Δ_moments(x + im * y)
             return hcat(hermitianpart(Δ_z), hermitianpart(zΔ_m0))
         end
-        val, _ = quadgk(integrand, 0, Inf; atol = π * tol, maxevals = 10_000)
+        atol = π * tol
+        val, err = quadgk(integrand, 0, Inf; atol, maxevals = 10_000)
+        err > atol && @warn "hybridization integral missed tol" x err = err / π tol
         val ./= π
         return val[:, 1:n_c] + m0 / 2, val[:, (n_c + 1):end]
     end
