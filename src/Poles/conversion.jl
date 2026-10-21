@@ -3,34 +3,32 @@
 function anderson_matrix(P::PolesSum)
     N = length(P)
 
-    return _with_blas_threads(Threads.nthreads()) do
-        H_LP = Diagonal(locations(P))
-        V = amplitudes(P)
-        b_0 = norm(V)
-        V .*= inv(b_0)
+    H_LP = Diagonal(locations(P))
+    V = amplitudes(P)
+    b_0 = norm(V)
+    V .*= inv(b_0)
 
-        # Find orthogonal complement to create basis (Eq. A41).
-        U1 = [V nullspace(V')]
-        h = U1' * H_LP * U1
+    # Find orthogonal complement to create basis (Eq. A41).
+    U1 = [V nullspace(V')]
+    h = U1' * H_LP * U1
 
-        # Diagonalize bottom left subspace
-        # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
-        # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
-        # with d diagonal
-        F = eigen!(Hermitian(h[2:end, 2:end]))
-        # Anderson matrix
-        H_A = zero(h)
-        H_A[1, 1] = h[1, 1]
-        for i in 2:N
-            @inbounds H_A[i, i] = F.values[i - 1]
-        end
-        h21 = @view h[2:end, 1]
-        H_A21 = @view H_A[1, 2:end]
-        mul!(H_A21, F.vectors', h21)
-        H_A[1, 2:end] .= conj.(H_A21) # H_A12
-
-        b_0, Hermitian(H_A)
+    # Diagonalize bottom left subspace
+    # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
+    # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
+    # with d diagonal
+    F = eigen!(Hermitian(h[2:end, 2:end]))
+    # Anderson matrix
+    H_A = zero(h)
+    H_A[1, 1] = h[1, 1]
+    for i in 2:N
+        @inbounds H_A[i, i] = F.values[i - 1]
     end
+    h21 = @view h[2:end, 1]
+    H_A21 = @view H_A[1, 2:end]
+    mul!(H_A21, F.vectors', h21)
+    H_A[1, 2:end] .= conj.(H_A21) # H_A12
+
+    return b_0, Hermitian(H_A)
 end
 
 function anderson_matrix(P::PolesSumBlock)
@@ -42,33 +40,31 @@ function anderson_matrix(P::PolesSumBlock)
     r == n_b ||
         throw(ArgumentError(lazy"amplitudes have rank $(r) below block size $(n_b)"))
 
-    return _with_blas_threads(Threads.nthreads()) do
-        H_LP = Diagonal(repeat(locations(P); inner = n_b))
-        R_a, B_0 = _orthonormalize_lowdin(V)
+    H_LP = Diagonal(repeat(locations(P); inner = n_b))
+    R_a, B_0 = _orthonormalize_lowdin(V)
 
-        # Find orthogonal complement to create basis (Eq. A41).
-        U1 = [R_a nullspace(R_a')]
-        h = U1' * H_LP * U1
+    # Find orthogonal complement to create basis (Eq. A41).
+    U1 = [R_a nullspace(R_a')]
+    h = U1' * H_LP * U1
 
-        # Diagonalize bottom left subspace
-        # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
-        # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
-        # with d diagonal
-        F = eigen!(Hermitian(h[(n_b + 1):end, (n_b + 1):end]))
-        # Anderson matrix
-        H_A = zero(h)
-        H_A[1:n_b, 1:n_b] .= @view h[1:n_b, 1:n_b]
-        for i in (n_b + 1):(N * n_b)
-            @inbounds H_A[i, i] = F.values[i - n_b]
-        end
-        h21 = @view h[(n_b + 1):end, 1:n_b]
-        H_A21 = @view H_A[(n_b + 1):end, 1:n_b]
-        mul!(H_A21, F.vectors', h21)
-        H_A12 = @view H_A[1:n_b, (n_b + 1):end] # H_A12
-        adjoint!(H_A12, H_A21)
-
-        B_0, Hermitian(H_A)
+    # Diagonalize bottom left subspace
+    # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
+    # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
+    # with d diagonal
+    F = eigen!(Hermitian(h[(n_b + 1):end, (n_b + 1):end]))
+    # Anderson matrix
+    H_A = zero(h)
+    H_A[1:n_b, 1:n_b] .= @view h[1:n_b, 1:n_b]
+    for i in (n_b + 1):(N * n_b)
+        @inbounds H_A[i, i] = F.values[i - n_b]
     end
+    h21 = @view h[(n_b + 1):end, 1:n_b]
+    H_A21 = @view H_A[(n_b + 1):end, 1:n_b]
+    mul!(H_A21, F.vectors', h21)
+    H_A12 = @view H_A[1:n_b, (n_b + 1):end] # H_A12
+    adjoint!(H_A12, H_A21)
+
+    return B_0, Hermitian(H_A)
 end
 
 # scalar form

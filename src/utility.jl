@@ -242,15 +242,3 @@ function _projected_eigen(H_ks, Σ_stat, idx)
     end
     return Es, Vs
 end
-
-function _with_blas_threads(f, t::Int = 1)
-    t_old = BLAS.get_num_threads()
-    t_old == t && return f()
-
-    BLAS.set_num_threads(t)
-    try
-        return f()
-    finally
-        BLAS.set_num_threads(t_old)
-    end
-end
