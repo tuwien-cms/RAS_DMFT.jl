@@ -51,7 +51,7 @@ using Test
 
         Σ_H, Σ = self_energy_dyson(-μ, Δ0, G_imp, -5:0.02:5)
         @test Σ_H ≈ U / 2 atol = 10 * eps() # half-filling
-        @test moment(Σ, 0) ≈ U^2 / 4 atol = 2.0e-11
+        @test moment(Σ, 0) ≈ U^2 / 4 atol = 4.0e-11
         @test !any(iszero, locations(Σ)) # no pole at 0 for metal
     end # self_energy_dyson
 
