@@ -12,7 +12,7 @@ function anderson_matrix(P::PolesSum)
     U1 = [V nullspace(V')]
     h = U1' * H_LP * U1
 
-    # Diagonalize bottom left subspace
+    # Diagonalize bottom right subspace
     # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
     # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
     # with d diagonal
@@ -47,7 +47,7 @@ function anderson_matrix(P::PolesSumBlock)
     U1 = [R_a nullspace(R_a')]
     h = U1' * H_LP * U1
 
-    # Diagonalize bottom left subspace
+    # Diagonalize bottom right subspace
     # (1 0   ) * ( h11 h12 ) * ( 1 0  ) = ( h11 h12*U2 )
     # (0 U2' ) * ( h21 h22 )   ( 0 U2 )   ( U2'*h21  d )
     # with d diagonal
