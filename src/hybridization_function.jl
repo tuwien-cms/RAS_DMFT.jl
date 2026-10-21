@@ -15,7 +15,7 @@ and half-bandwidth `D`.
 Δ(z) = \\frac{1}{2} \\left(z - \\mathrm{sgn}(\\mathrm{Re}(z)) \\sqrt{z^2 - D^2}\\right)
 ```
 
-with ``\\mathrm{sgn}(0) = \\mathrm{sgn}(0^±)``.
+with ``\\mathrm{sgn}(0) = \\mathrm{sgn}(0^+)``.
 """
 function hybridization_function_bethe_analytic(z::Number, D::Real = 1.0)
     return greens_function_bethe_analytic(z, D) * D^2 / 4
