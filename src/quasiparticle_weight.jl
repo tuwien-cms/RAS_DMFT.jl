@@ -112,7 +112,7 @@ function _bisect_sign_change(residual, λ_low, λ_high)
 end
 
 # proportional to curvature (∂^2 Z)/(∂(logλ)^2)
-# common factor 4 λ^2 Z^2 canceled as only the sign is relevant
+# common factor canceled as only the sign is relevant
 @inline function _quasiparticle_weight_log_curvature(Σ::PolesSum, tol, λ)
     M1, M2, M3 = _regularized_pole_moments(Σ, tol, λ)
     return (1 + M1) * M2 + 2 * λ^2 * M2^2 - 2 * λ^2 * (1 + M1) * M3
