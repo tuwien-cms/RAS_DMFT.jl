@@ -43,7 +43,6 @@ function block_lanczos(
         # cycle for new step
         Q_curr, Q_old, Q_new = Q_new, Q_curr, Q_old
         # Q_new = H Q
-        zerovector!(Q_new)
         mul!(Q_new, H, Q_curr)
         # Q_new -= Q_old B^†_{j-1}
         adjoint!(M1, B[j - 1])
