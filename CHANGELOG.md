@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init_system` requires `H_int::Operator{Float64}` and `ϵ_imp::Float64`,
   which the ground-state calculation needed already
   ([#292](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/292)) (d123a1e)
+- `anderson_matrix`, and with it `inverse` and `self_energy_schur`,
+  no longer set the BLAS thread count to the Julia thread count
+  ([#293](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/293)) (ecfdf8f)
 
 ### Removed
 
