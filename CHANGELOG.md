@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `grid_interpolate` throws an `ArgumentError` for fewer than 2 points
   instead of a `BoundsError`
   ([#291](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/291)) (c475393)
+- `PolesContinuedFractionBlock(locs, amps)` accepts matrices that are Hermitian up to rounding
+  and copies its input, as the form with a scale does
+  ([#295](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/295)) (2f3be5c)
 
 ## [0.12.0] - 2026-09-25
 
