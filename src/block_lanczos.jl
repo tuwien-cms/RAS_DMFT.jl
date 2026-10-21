@@ -64,7 +64,8 @@ end
         H::AbstractMatrix{T1}, Q1::Matrix{T2}, N::Integer
     ) where {T1<:Number,T2<:Number}
 
-Block Lanczos ``\\mathrm{span}{Q_1, H Q_1, …, H^N Q_1}`` with full reorthogonalization.
+Block Lanczos ``\\mathrm{span}\\{Q_1, H Q_1, …, H^{N-1} Q_1\\}``
+with full reorthogonalization.
 
 If the off-diagonal element ``B_i`` gets small, the algorithm is stopped early
 and not all `N` steps are run.
