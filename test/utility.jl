@@ -51,6 +51,10 @@ using Test
         @test_logs (:warn,) init_system(
             Δ, H_int, -μ, 0, L_v, L_c, p, var; n_kryl = 2, n_max_restart = 1
         )
+        # integer ϵ_imp or U fail inside, so the signature rejects them
+        rest = (Int, Int, Int, Int, Float64) # ϵ_mf, L_v, L_c, p, var
+        @test !hasmethod(init_system, Tuple{typeof(Δ), typeof(H_int), Int, rest...})
+        @test !hasmethod(init_system, Tuple{typeof(Δ), typeof(n[1, 1 // 2]), Float64, rest...})
     end # init system
 
     @testset "Kondo temperature" begin

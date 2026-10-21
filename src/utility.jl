@@ -3,8 +3,8 @@
 """
     init_system(
         Δ::PolesSum,
-        H_int::Operator,
-        ϵ_imp::Real,
+        H_int::Operator{Float64},
+        ϵ_imp::Float64,
         ϵ_mf::Real,
         L_v::Int,
         L_c::Int,
@@ -24,8 +24,8 @@ with `n_kryl` Lanczos vectors per restart and at most `n_max_restart` restarts.
 """
 function init_system(
         Δ::PolesSum,
-        H_int::Operator,
-        ϵ_imp::Real,
+        H_int::Operator{Float64},
+        ϵ_imp::Float64,
         ϵ_mf::Real,
         L_v::Int,
         L_c::Int,
