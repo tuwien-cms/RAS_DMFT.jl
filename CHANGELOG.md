@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `find_chemical_potential` and `hybridization_function_local` warn
   when an integral stops above `n_tol` or `tol`
   ([#294](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/294)) (54e66b2)
+- `find_chemical_potential` starts the bisection from the band range of `H_k + Σ_stat`
+  instead of the pole range of `Σ_dyn` by default
+  ([#299](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/299)) (95b3356)
 
 ### Removed
 
