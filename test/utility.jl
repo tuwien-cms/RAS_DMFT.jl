@@ -179,14 +179,14 @@ using Test
                 H_ks, Σ_stat, Σ_dyn_13, [1, 4], 0.1
             )
 
-            # The hard-coded values come from the diagonal case.
+            # The fillings are closed forms of the diagonal case.
             # The same system in three layouts: the correlated block in either
             # order, and everything rotated into a dense complex basis.
             # All three have to return the chemical potential it came from.
             for (μ_target, n_fill) in (
-                    (-0.5, 0.18015156588363956),
-                    (0.75, 2.2394449917269812),
-                    (1.7, 2.7786451479534993),
+                    (-0.5, 1 / 2 - 23 / (4 * sqrt(1489)) - 29 / (4 * sqrt(1801))),
+                    (0.75, 9 / 4 - 1 / (4 * sqrt(561))),
+                    (1.7, 5 / 2 + sqrt(21) / 36 + 9 / (4 * sqrt(221))),
                 )
                 @test filling_exact(μ_target, H_ks_diag, Σ_stat_diag, locs, wgts) ≈
                     n_fill atol = 8 * eps()
