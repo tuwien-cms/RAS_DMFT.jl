@@ -113,8 +113,10 @@ Returns the calculated chemical potential and effective filling.
 - `n_fill::Real`: target filling
 - `μ_tol::Real = 1.0e-7`: stop once the bisection bracket is narrower than this
 - `b_max::Int = 40`: maximum number of bisection steps
-- `μ_min::Real = minimum(locations(Σ_dyn))`: lower end of the initial bracket
-- `μ_max::Real = maximum(locations(Σ_dyn))`: upper end of the initial bracket
+- `μ_min::Union{Real, Nothing} = nothing`: lower end of the initial bracket,
+  `nothing` takes the lowest eigenvalue of all `H_k + Σ_stat`
+- `μ_max::Union{Real, Nothing} = nothing`: upper end of the initial bracket,
+  `nothing` takes the highest eigenvalue of all `H_k + Σ_stat`
 - `n_tol::Real = 1.0e-8`: absolute tolerance of the filling integral
 """
 function find_chemical_potential(
@@ -125,17 +127,21 @@ function find_chemical_potential(
         n_fill::Real;
         μ_tol::Real = 1.0e-7,
         b_max::Int = 40,
-        μ_min::Real = minimum(locations(Σ_dyn)),
-        μ_max::Real = maximum(locations(Σ_dyn)),
+        μ_min::Union{Real, Nothing} = nothing,
+        μ_max::Union{Real, Nothing} = nothing,
         n_tol::Real = 1.0e-8,
     )
     # check input
     _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
-    μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
     n_tol > 0 || throw(DomainError(n_tol, "n_tol is not positive"))
 
     # μ-independent part of the resolvent
     bands = _projected_eigen(H_ks, Σ_stat, idx)
+
+    # default bracket: band range of H_k + Σ_stat, eigenvalues are sorted
+    μ_min = something(μ_min, minimum(first, first(bands)))
+    μ_max = something(μ_max, maximum(last, first(bands)))
+    μ_min < μ_max || throw(ArgumentError("violating μ_min < μ_max"))
 
     # filling for initial guesses
     n_min = _filling_mu(bands, Σ_dyn, μ_min, n_tol)

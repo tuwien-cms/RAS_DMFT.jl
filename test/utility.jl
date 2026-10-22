@@ -203,6 +203,17 @@ using Test
                     @test n ≈ n_fill atol = 1.0e-12
                 end
             end
+
+            # default bracket is the band range of H_k + Σ_stat, [-0.55, 1.5]
+            μ, _ = find_chemical_potential(
+                H_ks, Σ_stat, Σ_dyn_13, idx13, 9 / 4 - 1 / (4 * sqrt(561));
+                μ_tol = 1.0e-13, b_max = 200, n_tol,
+            )
+            @test μ ≈ 0.75 atol = 1.0e-12
+            # μ = 1.7 lies above the bands
+            @test_throws ArgumentError find_chemical_potential(
+                H_ks, Σ_stat, Σ_dyn_13, idx13, 5 / 2 + sqrt(21) / 36 + 9 / (4 * sqrt(221))
+            )
         end # basis and ordering
     end # find_chemical_potential
 
