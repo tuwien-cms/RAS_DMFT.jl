@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `hybridization_function_local` method
+  taking one dynamic self-energy and one orbital list per site,
+  returning the mean-field level and hybridization function of every correlated site
+  ([#300](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/300)) (b03f0f4)
+
 ### Changed
 
 - `merge_negative_weight!` throws an `ArgumentError` for a total weight within rounding noise
