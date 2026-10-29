@@ -228,6 +228,76 @@ using Test
             end
         end # basis and ordering
 
+        @testset "sites" begin
+            # Two sites coupled by hopping and a bath orbital, Σ_dyn on site 2 only.
+            # The hard-coded values come from the pole representation:
+            # `greens_function_local`, `inverse` of each diagonal entry, and `to_grid`.
+            H_ks = [
+                [0.25 0.5 0.25; 0.5 -0.25 0.5; 0.25 0.5 1.0],
+                [-0.25 -0.25 0.5; -0.25 0.25 0.25; 0.5 0.25 -1.0],
+            ]
+            Σ_stat = zeros(3, 3)
+            # the zero pole of site 1 sits elsewhere than the pole of site 2
+            Σ_dyns = [
+                PolesSumBlock([-1.0], [zeros(1, 1)]),
+                PolesSumBlock([0.5], [fill(0.25, 1, 1)]),
+            ]
+            grid = -2.0:0.5:2.0
+            ϵ_mfs, Δs = hybridization_function_local(
+                H_ks, Σ_stat, Σ_dyns, [[1], [2]], 0.0, grid; tol
+            )
+            @test ϵ_mfs == [zeros(1, 1), zeros(1, 1)] # ⟨M⟩_12 = 0.125 is dropped
+            @test all(Δ -> locations(Δ) == grid, Δs)
+            w1_ref = [
+                0.0,
+                0.058879566270993486,
+                0.12391469903716515,
+                0.05399734113794952,
+                0.015122300642077483,
+                0.0054111735307546885,
+                0.05184549364866106,
+                0.06582942573239652,
+                0.0,
+            ]
+            w2_ref = [
+                0.0,
+                0.013640947927631984,
+                0.008793526904326368,
+                0.1456091460125172,
+                0.05106907780051995,
+                0.045215222270711286,
+                0.06373741591951318,
+                0.046934663164776895,
+                0.0,
+            ]
+            @test only.(weights(Δs[1])) ≈ w1_ref atol = 1.0e-12
+            @test only.(weights(Δs[2])) ≈ w2_ref atol = 1.0e-12
+            # sum rule: m_{0,s} = ⟨M_k^2⟩_ss - ϵ_{mf,s}^2 = 0.375,
+            # not 0.375 - 0.125^2 of the two-site cluster
+            @test sum(only.(weights(Δs[1]))) ≈ 0.375 atol = 1.0e-12
+            @test sum(only.(weights(Δs[2]))) ≈ 0.375 atol = 1.0e-12
+
+            # sites of different sizes on two decoupled copies:
+            # the first copy as one two-site cluster, the second split as above
+            Σ_dyn = PolesSumBlock([0.5], [diagm([0.0, 0.25])])
+            ϵ_ref, Δ_ref = hybridization_function_local(
+                H_ks, Σ_stat, Σ_dyn, 1:2, 0.0, grid; tol
+            )
+            @test ϵ_ref == [0.0 0.125; 0.125 0.0]
+            @test sum(weights(Δ_ref)) ≈ [0.359375 0.125; 0.125 0.359375] atol = 1.0e-12
+            H2_ks = [cat(H_k, H_k; dims = (1, 2)) for H_k in H_ks]
+            ϵ_mfs, Δs = hybridization_function_local(
+                H2_ks, zeros(6, 6), [Σ_dyn; Σ_dyns], [[1, 2], [4], [5]], 0.0, grid; tol
+            )
+            @test ϵ_mfs == [ϵ_ref, zeros(1, 1), zeros(1, 1)]
+            @test size.(Δs) == [(2, 2), (1, 1), (1, 1)]
+            for (w, w_ref) in zip(weights(Δs[1]), weights(Δ_ref))
+                @test w ≈ w_ref atol = 1.0e-12
+            end
+            @test only.(weights(Δs[2])) ≈ w1_ref atol = 1.0e-12
+            @test only.(weights(Δs[3])) ≈ w2_ref atol = 1.0e-12
+        end # sites
+
         @testset "errors" begin
             H_ks = [Diagonal([0.1, 0.2])]
             Σ_stat = zeros(2, 2)
@@ -252,6 +322,21 @@ using Test
             # tolerance not positive
             @test_throws DomainError hybridization_function_local(
                 H_ks, Σ_stat, Σ_dyn, [1], 0.0, grid; tol = 0
+            )
+            # one self-energy for two sites
+            @test_throws DimensionMismatch hybridization_function_local(
+                H_ks, Σ_stat, [Σ_dyn], [[1], [2]], 0.0, grid
+            )
+            # Σ_dyn of site 2 is 2×2 but site 2 has one orbital
+            Σ_dyn2 = PolesSumBlock([0.0], [zeros(2, 2)])
+            @test_throws DimensionMismatch hybridization_function_local(
+                H_ks, Σ_stat, [Σ_dyn, Σ_dyn2], [[1], [2]], 0.0, grid
+            )
+            # orbital 1 in both sites
+            @test_throws ArgumentError("idxs share orbitals") (
+                hybridization_function_local(
+                    H_ks, Σ_stat, [Σ_dyn, Σ_dyn], [[1], [1]], 0.0, grid
+                )
             )
         end # errors
     end # hybridization_function_local
