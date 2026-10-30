@@ -196,9 +196,15 @@ function _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
         throw(DimensionMismatch("size of Σ_stat does not match H_ks"))
     (size(Σ_dyn) == (n_c, n_c))::Bool ||
         throw(DimensionMismatch("size of Σ_dyn does not match idx"))
-    allunique(idx) || throw(ArgumentError("idx has duplicate orbitals"))
-    all(in(1:n_b), idx) || throw(ArgumentError("idx outside range"))
+    _check_idx(idx, n_b)
     return n_b, n_c
+end
+
+# check orbital indices `idx` of `n_b` orbitals, called `name` in errors
+function _check_idx(idx, n_b, name = "idx")
+    allunique(idx) || throw(ArgumentError(lazy"$name has duplicate orbitals"))
+    all(in(1:n_b), idx) || throw(ArgumentError(lazy"$name outside range"))
+    return nothing
 end
 
 # filling at chemical potential μ using the contour integral of left half-plane

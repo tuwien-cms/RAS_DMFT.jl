@@ -200,5 +200,61 @@ using Test
             @test moment(G, 2) ≈ M_2 rtol = 200 * eps()
             @test moment(G, 3) ≈ M_3 rtol = 200 * eps()
         end # interacting
+
+        @testset "orbitals" begin
+            H_k4 = [
+                [1 2 0 1; 2 -1 1 0; 0 1 2 3; 1 0 3 0],
+                [0 1 1 0; 1 2 -im 2; 1 im -3 1 + im; 0 2 1 - im 1],
+            ]
+            Z = zeros(Int, 2, 2)
+            # self-energy on orbitals 1 and 2 only
+            embed(w) = [w Z; Z Z]
+            Σ_stat4 = Diagonal([1, 0, 0, 0])
+            Σ_dyn4 = PolesSumBlock([-2, 3], [embed([1 im; -im 5]), embed([0 0; 0 6])])
+            G0_full = greens_function_local(H_k4, 0.5)
+            G_full = greens_function_local(H_k4, Σ_stat4, Σ_dyn4, 0.5)
+            # dense resolvents at one point off the real axis
+            z = 0.3 + 0.7im
+            G0_z = sum(H -> inv((z + 0.5) * I - H), H_k4) / length(H_k4)
+            Σ_z = Σ_stat4 + evaluate(Σ_dyn4, z)
+            G_z = sum(H -> inv((z + 0.5) * I - H - Σ_z), H_k4) / length(H_k4)
+
+            # overlapping the correlated orbitals partly and unsorted, or not at all
+            for orbitals in ([3, 1], [4])
+                @inferred greens_function_local(H_k4, 0.5; orbitals)
+                @inferred greens_function_local(H_k4, Σ_stat4, Σ_dyn4, 0.5; orbitals)
+                G0 = greens_function_local(H_k4, 0.5; orbitals)
+                G = greens_function_local(H_k4, Σ_stat4, Σ_dyn4, 0.5; orbitals)
+                for (P, P_full, P_z) in ((G0, G0_full, G0_z), (G, G_full, G_z))
+                    @test size(P) == (length(orbitals), length(orbitals))
+                    @test norm(evaluate(P, z) - P_z[orbitals, orbitals]) < 20 * eps()
+                    @test locations(P) == locations(P_full)
+                    for i in eachindex(orbitals), j in eachindex(orbitals)
+                        P_ref = PolesSum(P_full, orbitals[i], orbitals[j])
+                        @test norm(weights(PolesSum(P, i, j)) - weights(P_ref)) <
+                            4 * eps()
+                    end
+                end
+            end
+
+            # tol_weight = 10 drops both weights of Σ_dyn4, leaving one pole per band
+            G = greens_function_local(
+                H_k4, Σ_stat4, Σ_dyn4, 0.5; orbitals = [3, 1], tol_weight = 10
+            )
+            @test length(G) == length(H_k4) * 4
+            G_stat_z = sum(H -> inv((z + 0.5) * I - H - Σ_stat4), H_k4) / length(H_k4)
+            @test norm(evaluate(G, z) - G_stat_z[[3, 1], [3, 1]]) < 20 * eps()
+
+            for (orbitals, msg) in (
+                    ([0], "orbitals outside range"),
+                    ([5], "orbitals outside range"),
+                    ([1, 1], "orbitals has duplicate orbitals"),
+                )
+                @test_throws ArgumentError(msg) greens_function_local(H_k4; orbitals)
+                @test_throws ArgumentError(msg) greens_function_local(
+                    H_k4, Σ_stat4, Σ_dyn4, 0; orbitals
+                )
+            end
+        end # orbitals
     end # user supplied dispersion
 end # Green's function

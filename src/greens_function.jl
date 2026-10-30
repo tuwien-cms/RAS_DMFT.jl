@@ -97,7 +97,8 @@ end
 """
     greens_function_local(
         H_k::AbstractVector{<:AbstractMatrix},
-        μ::Real = 0,
+        μ::Real = 0;
+        orbitals::AbstractVector{<:Integer} = axes(first(H_k), 1),
     )
 
 Calculate the non-interacting local Green's function for a dispersion relation ``H_k``.
@@ -106,16 +107,17 @@ Calculate the non-interacting local Green's function for a dispersion relation `
 G_{\\mathrm{loc},0}(z) = \\frac{1}{N_k} ∑_k \\frac{1}{z + μ - H_k}
 ```
 
-Returns a [`PolesSumBlock`](@ref).
+Returns a [`PolesSumBlock`](@ref) of `orbitals`, in that order.
 """
 function greens_function_local(
         H_k::AbstractVector{<:AbstractMatrix},
-        μ::Real = 0,
+        μ::Real = 0;
+        orbitals::AbstractVector{<:Integer} = axes(first(H_k), 1),
     )
     # check input
-    isempty(H_k) && throw(ArgumentError("H_k is empty"))
     allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
     all(ishermitian, H_k) || throw(ArgumentError("H_k is not Hermitian"))
+    _check_idx(orbitals, size(first(H_k), 1), "orbitals")
 
     T = eltype(eltype(H_k)) <: Real ? Float64 : ComplexF64
     locs = real(T)[]
@@ -124,7 +126,7 @@ function greens_function_local(
         E, U = eigen(Hermitian(H))
         append!(locs, E)
         for i in axes(U, 2)
-            u = view(U, :, i)
+            u = view(U, orbitals, i)
             push!(wgts, u * u')
         end
     end
@@ -141,6 +143,7 @@ end
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
         μ::Real;
+        orbitals::AbstractVector{<:Integer} = axes(first(H_k), 1),
         tol_weight::Real = tol_weight_default(Σ_dyn),
     )
 
@@ -151,10 +154,15 @@ and self-energy ``Σ(z)``.
 G_\\mathrm{loc}(z) = \\frac{1}{N_k} ∑_k \\frac{1}{z + μ - H_k - Σ(z)} .
 ```
 
+`Σ_stat` and `Σ_dyn` have the same size as ``H_k``.
+Returns a [`PolesSumBlock`](@ref) of `orbitals`, in that order.
+
 Only equal locations are merged;
 merge nearby ones with [`merge_degenerate_poles!`](@ref).
 
 # Arguments
+- `orbitals::AbstractVector{<:Integer} = axes(first(H_k), 1)`:
+  the orbitals of the result, all by default
 - `tol_weight::Real = tol_weight_default(Σ_dyn)`:
   treat weights in `Σ_dyn` at or below this value as zero
 """
@@ -163,6 +171,7 @@ function greens_function_local(
         Σ_stat::AbstractMatrix,
         Σ_dyn::PolesSumBlock,
         μ::Real;
+        orbitals::AbstractVector{<:Integer} = axes(first(H_k), 1),
         tol_weight::Real = tol_weight_default(Σ_dyn),
     )
     # check input
@@ -170,6 +179,7 @@ function greens_function_local(
     allequal(size, H_k)::Bool || throw(DimensionMismatch("different matrix sizes in H_k"))
     (size(Σ_dyn) == (n_b, n_b))::Bool ||
         throw(DimensionMismatch("matrix size of Σ_dyn does not match H_k"))
+    _check_idx(orbitals, n_b, "orbitals")
 
     # Calculate Green's function in pole representation.
     T = float(promote_type(eltype(eltype(H_k)), eltype(Σ_stat), eltype(Σ_dyn)))
@@ -182,14 +192,14 @@ function greens_function_local(
     dim = size(Σ_A, 1)
     n_p = n_k * dim # total number of poles
     locs = Vector{real(T)}(undef, n_p)
-    amps = Matrix{T}(undef, n_b, n_p)
+    amps = Matrix{T}(undef, length(orbitals), n_p)
     locs, amps = let locs = locs, amps = amps, Σ_A = Σ_A, n_b = n_b, dim = dim
         Threads.@threads for i in eachindex(H_k)
             F = _arrowhead_eigen(Σ_A, H_k[i], Σ_stat, μ, n_b)
             idx_low = 1 + dim * (i - 1)
             idx_high = idx_low + dim - 1
             @inbounds locs[idx_low:idx_high] = F.values
-            @inbounds amps[:, idx_low:idx_high] = F.vectors[1:n_b, :]
+            @inbounds amps[:, idx_low:idx_high] = F.vectors[orbitals, :]
         end
         locs, amps
     end
