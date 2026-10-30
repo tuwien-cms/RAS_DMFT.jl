@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   taking one dynamic self-energy and one orbital list per site,
   returning the mean-field level and hybridization function of every correlated site
   ([#300](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/300)) (7949737)
+- `orbitals` keyword of `greens_function_local`,
+  returning the block of those orbitals in the given order
+  ([#302](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/302)) (e769e41)
 
 ### Changed
 
@@ -31,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `find_chemical_potential` starts the bisection from the band range of `H_k + Σ_stat`
   instead of the pole range of `Σ_dyn` by default
   ([#299](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/299)) (95b3356)
+- `greens_function_local(H_k)` throws a `BoundsError` for an empty `H_k`
+  instead of an `ArgumentError`
+  ([#302](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/302)) (e769e41)
 
 ### Removed
 
