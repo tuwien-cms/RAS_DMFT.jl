@@ -73,6 +73,8 @@ export
     natural_impurity_orbital_operator,
     natural_impurity_orbital_ras_operator,
     quasiparticle_weight,
+    quasiparticle_weight_gaussian,
+    quasiparticle_weight_lorentzian,
     quasiparticle_weight_optimum_regularization,
     read_hdf5,
     remove_zero_weight,

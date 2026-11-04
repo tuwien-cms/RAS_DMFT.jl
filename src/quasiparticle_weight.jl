@@ -29,6 +29,67 @@ function quasiparticle_weight(Σ::PolesSum; tol::Real = 0, λ::Real = 0)
 end
 
 """
+    quasiparticle_weight_gaussian(Σ::PolesSum, σ::Real)
+
+Obtain the quasiparticle weight from the exact slope of ``Σ_σ``,
+``Σ`` broadened by a Gaussian of standard deviation ``σ`` as in [`evaluate_gaussian`](@ref).
+
+```math
+Z = \\left(1 - \\frac{1}{σ^2}\\sum_i w_i \\left[1 - 2x_i F(x_i)\\right]\\right)^{-1},
+\\quad x_i = \\frac{a_i}{\\sqrt{2}σ}
+```
+
+with the Dawson function ``F``.
+The limit ``σ → 0`` recovers [`quasiparticle_weight`](@ref).
+
+Unlike [`quasiparticle_weight`](@ref), ``Z`` can be negative or larger than one,
+as poles within the broadening width of zero contribute a positive slope.
+
+See also [`quasiparticle_weight`](@ref),
+[`quasiparticle_weight_lorentzian`](@ref),
+[`evaluate_gaussian`](@ref).
+"""
+function quasiparticle_weight_gaussian(Σ::PolesSum, σ::Real)
+    σ > 0 || throw(ArgumentError("σ must be positive"))
+
+    deriv = zero(Float64)
+    for (loc, wgt) in Σ
+        deriv += wgt * _dawson_slope(loc / (sqrt(2) * σ))
+    end
+    return inv(1 - deriv / σ^2)
+end
+
+"""
+    quasiparticle_weight_lorentzian(Σ::PolesSum, δ::Real)
+
+Obtain the quasiparticle weight from the exact slope of ``Σ(ω + \\mathrm{i}δ)``,
+as in [`evaluate_lorentzian`](@ref).
+
+```math
+Z = \\left(1 - \\sum_i w_i \\frac{δ^2 - a_i^2}{(a_i^2 + δ^2)^2}\\right)^{-1}
+```
+
+The limit ``δ → 0`` recovers [`quasiparticle_weight`](@ref).
+
+Unlike [`quasiparticle_weight`](@ref), ``Z`` can be negative or larger than one,
+as poles within the broadening width of zero contribute a positive slope.
+
+See also [`quasiparticle_weight`](@ref),
+[`quasiparticle_weight_gaussian`](@ref),
+[`evaluate_lorentzian`](@ref).
+"""
+function quasiparticle_weight_lorentzian(Σ::PolesSum, δ::Real)
+    δ >= 0 || throw(ArgumentError("δ must be semipositive"))
+    iszero(δ) && return quasiparticle_weight(Σ) # avoids 0 / 0 for a pole at zero
+
+    deriv = zero(Float64)
+    for (loc, wgt) in Σ
+        deriv += wgt * (δ^2 - loc^2) / (loc^2 + δ^2)^2
+    end
+    return inv(1 - deriv)
+end
+
+"""
     quasiparticle_weight_optimum_regularization(
         Σ::PolesSum;
         tol::Real = 0,
@@ -109,6 +170,13 @@ function _bisect_sign_change(residual, λ_low, λ_high)
         end
     end
     return (λ_low + λ_high) * 0.5
+end
+
+# 1 - 2x F(x), with the asymptotic series for large |x| against cancellation
+function _dawson_slope(x)
+    abs(x) < 50 && return 1 - 2x * dawson(x)
+    s = inv(2x^2)
+    return -s * (1 + s * (3 + s * (15 + s * 105)))
 end
 
 # proportional to curvature (∂^2 Z)/(∂(logλ)^2)
