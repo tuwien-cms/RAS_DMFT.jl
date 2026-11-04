@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `orbitals` keyword of `greens_function_local`,
   returning the block of those orbitals in the given order
   ([#302](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/302)) (e769e41)
+- `quasiparticle_weight_gaussian` and `quasiparticle_weight_lorentzian`,
+  returning the quasiparticle weight from the exact slope
+  of the Gaussian- or Lorentzian-broadened self-energy
+  ([#303](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/303)) (3efddde)
 
 ### Changed
 
