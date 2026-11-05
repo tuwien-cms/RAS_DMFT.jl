@@ -36,6 +36,7 @@ export
     correlator,
     correlator_minus,
     correlator_plus,
+    density_matrix_local,
     evaluate,
     evaluate_gaussian,
     evaluate_lorentzian,

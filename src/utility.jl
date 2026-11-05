@@ -172,6 +172,62 @@ function find_chemical_potential(
     return μ_new, n_new
 end
 
+"""
+    density_matrix_local(
+        H_ks::Vector{<:AbstractMatrix},
+        Σ_stat::AbstractMatrix,
+        Σ_dyn::PolesSumBlock,
+        idx::AbstractVector{<:Integer},
+        μ::Real;
+        <keyword arguments>
+    )
+
+Calculate the local density matrix at zero temperature
+
+```math
+ρ = ∫_{-∞}^0 \\mathrm{d}ω~\\frac{\\mathrm{i}}{2π}
+\\left[G_\\mathrm{loc}(ω + \\mathrm{i}0^+) - G_\\mathrm{loc}(ω + \\mathrm{i}0^+)^†\\right] ,
+```
+
+with ``G_\\mathrm{loc}`` and the self-energy as in [`find_chemical_potential`](@ref).
+The integral runs along the imaginary axis,
+so a pole at exactly ``ω = 0`` counts half.
+
+Returns the `Hermitian` block of `orbitals`, in that order,
+real if `H_ks`, `Σ_stat`, and `Σ_dyn` are real.
+
+# Arguments
+- `H_ks::Vector{<:AbstractMatrix}`: Hermitian `n_b × n_b` Hamiltonian per k-point
+- `Σ_stat::AbstractMatrix`: static self-energy, `n_b × n_b`
+- `Σ_dyn::PolesSumBlock`: dynamic self-energy on the correlated block, `n_c × n_c`
+- `idx::AbstractVector{<:Integer}`: the `n_c` correlated orbitals
+- `μ::Real`: chemical potential
+- `orbitals::AbstractVector{<:Integer} = axes(first(H_ks), 1)`:
+  the orbitals of the result, all by default
+- `n_tol::Real = 1.0e-8`: absolute tolerance of the integral
+"""
+function density_matrix_local(
+        H_ks::Vector{<:AbstractMatrix},
+        Σ_stat::AbstractMatrix,
+        Σ_dyn::PolesSumBlock,
+        idx::AbstractVector{<:Integer},
+        μ::Real;
+        orbitals::AbstractVector{<:Integer} = axes(first(H_ks), 1),
+        n_tol::Real = 1.0e-8,
+    )
+    # check input
+    n_b, n_c = _check_lattice(H_ks, Σ_stat, Σ_dyn, idx)
+    _check_idx(orbitals, n_b, "orbitals")
+    n_tol > 0 || throw(DomainError(n_tol, "n_tol is not positive"))
+
+    # one diagonalization for both projections,
+    # so that they share the gauge of degenerate eigenvectors
+    Es, Xs = _projected_eigen(H_ks, Σ_stat, [idx; orbitals])
+    Vs = [X[:, 1:n_c] for X in Xs]
+    Ws = [X[:, (n_c + 1):end] for X in Xs]
+    return _density_matrix_mu((Es, Vs, Ws), Σ_dyn, μ, n_tol)
+end
+
 # Diagonalize `Σ_A` with its top-left `n_b × n_b` block replaced by `H + Σ_stat - μ * I`.
 # `Σ_A` has to hold the promoted element type of `H` and `Σ_stat`
 function _arrowhead_eigen(
@@ -205,6 +261,35 @@ function _check_idx(idx, n_b, name = "idx")
     allunique(idx) || throw(ArgumentError(lazy"$name has duplicate orbitals"))
     all(in(1:n_b), idx) || throw(ArgumentError(lazy"$name outside range"))
     return nothing
+end
+
+# density matrix of the orbitals projected by `Ws` at chemical potential μ,
+# the matrix version of `_filling_mu`
+function _density_matrix_mu(bands, Σ_dyn::PolesSumBlock, μ::Real, n_tol::Real)
+    Es, Vs, Ws = bands
+    n_k = length(Es)
+    T = promote_type(eltype(first(Vs)), eltype(Σ_dyn))
+
+    # G_oo = W^† D W + W^† D V Σ (1 - g Σ)^{-1} V^† D W
+    function integrand(y)
+        z = im * y
+        Σ = evaluate(Σ_dyn, z) # shared by all k-points
+        Gs = Vector{Matrix{complex(T)}}(undef, n_k)
+        Threads.@threads for i in 1:n_k
+            D = Diagonal(inv.(z + μ .- Es[i]))
+            DV = D * Vs[i]
+            DW = D * Ws[i]
+            g = Vs[i]' * DV # downfolded G_0
+            Gs[i] = Ws[i]' * DW + (Ws[i]' * DV) * ((I - Σ * g) \ (Σ * (Vs[i]' * DW)))
+        end
+        H = hermitianpart(sum(Gs) / n_k)
+        return T <: Real ? real(H) : H
+    end
+
+    atol = π * n_tol
+    val, err = quadgk(integrand, 0, Inf; atol, maxevals = 10_000)
+    err > atol && @warn "density matrix integral missed n_tol" μ err = err / π n_tol
+    return I / 2 + val / π
 end
 
 # filling at chemical potential μ using the contour integral of left half-plane
