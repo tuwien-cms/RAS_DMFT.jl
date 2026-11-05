@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   returning the quasiparticle weight from the exact slope
   of the Gaussian- or Lorentzian-broadened self-energy
   ([#303](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/303)) (3efddde)
+- `density_matrix_local`,
+  returning the zero-temperature density matrix of the given orbitals
+  from the imaginary-axis integral of the lattice Green's function
+  ([#304](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/304)) (a121c75)
 
 ### Changed
 
