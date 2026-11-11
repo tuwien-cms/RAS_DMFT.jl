@@ -48,10 +48,10 @@ using Test
             @test moment(Δ, 0) ≈ 1.0 rtol = 10 * eps()
         end # simple
 
-        @testset "grid Hubbard III" begin
+        @testset "grid Hubbard bands" begin
             grid = range(-5, 5; length = 101)
             # U = 0
-            Δ = hybridization_function_bethe_grid_hubbard3(grid)
+            Δ = hybridization_function_bethe_grid_hubbard_bands(grid)
             Δ0 = hybridization_function_bethe_grid(grid)
             @test typeof(Δ) === PolesSum{Float64, Float64}
             @test length(Δ) === 101
@@ -59,12 +59,12 @@ using Test
             @test locations(Δ) !== grid
             @test norm(amplitudes(Δ) - amplitudes(Δ0)) < 10 * eps()
             # U = 3
-            Δ = hybridization_function_bethe_grid_hubbard3(grid, 3)
+            Δ = hybridization_function_bethe_grid_hubbard_bands(grid, 3)
             @test amplitudes(Δ)[36] ≈ 0.08918761226820784 atol = 10 * eps()
             @test amplitudes(Δ)[51] == 0
             @test amplitudes(Δ)[66] ≈ 0.08918761226820784 atol = 10 * eps()
             @test moment(Δ, 0) ≈ 0.25 atol = 10 * eps()
-        end # grid Hubbard III
+        end # grid Hubbard bands
 
         @testset "grid" begin
             # 101 poles

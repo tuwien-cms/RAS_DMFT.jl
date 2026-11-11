@@ -69,16 +69,23 @@ function greens_function_bethe_grid(grid::AbstractVector{<:Real}, D::Real = 1.0)
 end
 
 """
-    greens_function_bethe_grid_hubbard3(
+    greens_function_bethe_grid_hubbard_bands(
         grid::AbstractVector{<:Real}, U::Real=0.0, D::Real=1.0
     )
 
-Return the [`PolesSum`](@ref) representation of the Hubbard III approximation
+Return the [`PolesSum`](@ref) representation of a lower and an upper Hubbard band
 with half-bandwidth `D` and poles given in `grid`.
 
-Created using two semicircles at ``±U/2``.
+Each band is the semicircle ``ρ_0`` of [`greens_function_bethe_grid`](@ref)
+with weight ``1/2``, shifted to ``±U/2``,
+
+```math
+ρ(ω) = \\frac{1}{2} \\left[ρ_0(ω + U/2) + ρ_0(ω - U/2)\\right],
+```
+
+the large-``U`` limit of DMFT on the Bethe lattice.
 """
-function greens_function_bethe_grid_hubbard3(
+function greens_function_bethe_grid_hubbard_bands(
         grid::AbstractVector{<:Real}, U::Real = 0.0, D::Real = 1.0
     )
     # check input

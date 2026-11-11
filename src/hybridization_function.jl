@@ -59,19 +59,20 @@ function hybridization_function_bethe_grid(grid::AbstractVector{<:Real}, D::Real
 end
 
 """
-    hybridization_function_bethe_grid_hubbard3(
+    hybridization_function_bethe_grid_hubbard_bands(
         grid::AbstractVector{<:Real}, U::Real = 0.0, D::Real = 1.0
     )
 
-Return the [`PolesSum`](@ref) representation of the Hubbard III approximation
+Return the [`PolesSum`](@ref) representation of the hybridization function
+``Δ(ω) = \\frac{D^2}{4} G(ω)`` of a lower and an upper Hubbard band
 with half-bandwidth `D` and poles given in `grid`.
 
-Created using two semicircles at ``±U/2``.
+See [`greens_function_bethe_grid_hubbard_bands`](@ref) for ``G``.
 """
-function hybridization_function_bethe_grid_hubbard3(
+function hybridization_function_bethe_grid_hubbard_bands(
         grid::AbstractVector{<:Real}, U::Real = 0.0, D::Real = 1.0
     )
-    Δ = greens_function_bethe_grid_hubbard3(grid, U, D)
+    Δ = greens_function_bethe_grid_hubbard_bands(grid, U, D)
     rmul!(Δ, D^2 / 4)
     return Δ
 end

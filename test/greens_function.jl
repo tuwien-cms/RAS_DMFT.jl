@@ -97,15 +97,15 @@ using Test
             @test weights(G) ≈ [0.1955011094778853, 0.6089977810442294, 0.1955011094778853]
         end # grid
 
-        @testset "grid Hubbard III" begin
+        @testset "grid Hubbard bands" begin
             # 1 pole
-            G = greens_function_bethe_grid_hubbard3([5.0])
+            G = greens_function_bethe_grid_hubbard_bands([5.0])
             @test locations(G) == [5.0]
             @test weights(G) == [1.0]
             # uniform grid
             grid = range(-5, 5; length = 101)
             # U = 0
-            G = greens_function_bethe_grid_hubbard3(grid)
+            G = greens_function_bethe_grid_hubbard_bands(grid)
             G0 = greens_function_bethe_grid(grid)
             @test typeof(G) === PolesSum{Float64, Float64}
             @test length(G) === 101
@@ -113,16 +113,16 @@ using Test
             @test locations(G) !== grid
             @test norm(weights(G) - weights(G0)) < 10 * eps()
             # U = 3
-            G = greens_function_bethe_grid_hubbard3(grid, 3)
+            G = greens_function_bethe_grid_hubbard_bands(grid, 3)
             @test amplitudes(G)[36] ≈ 0.1783752245364157 atol = 10 * eps()
             @test amplitudes(G)[51] == 0
             @test amplitudes(G)[66] ≈ 0.1783752245364157 atol = 10 * eps()
             @test moment(G, 0) ≈ 1 atol = 10 * eps()
             # integer grid
-            G = greens_function_bethe_grid_hubbard3([-1, 0, 1])
+            G = greens_function_bethe_grid_hubbard_bands([-1, 0, 1])
             @test typeof(G) === PolesSum{Float64, Float64}
             @test weights(G) ≈ [0.1955011094778853, 0.6089977810442294, 0.1955011094778853]
-        end # grid Hubbdard III
+        end # grid Hubbard bands
     end # Bethe lattice
 
     @testset "user supplied dispersion" begin
