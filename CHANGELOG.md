@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `greens_function_local(H_k)` throws a `BoundsError` for an empty `H_k`
   instead of an `ArgumentError`
   ([#302](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/302)) (e769e41)
+- `greens_function_bethe_grid_hubbard3` and `hybridization_function_bethe_grid_hubbard3`
+  are renamed to `greens_function_bethe_grid_hubbard_bands`
+  and `hybridization_function_bethe_grid_hubbard_bands`,
+  as they build the large-U limit of DMFT, not the Hubbard III approximation
+  ([#305](https://github.com/tuwien-cms/RAS_DMFT.jl/pull/305)) (942b3b3)
 
 ### Removed
 
