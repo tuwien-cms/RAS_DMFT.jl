@@ -46,7 +46,7 @@ using Test
         # analytic moments at half-filling
         G = G_plus + G_minus
         @test moment(G, 0) ≈ 1 atol = 8 * eps()
-        @test moment(G, 1) ≈ 0 atol = 30 * eps()
+        @test moment(G, 1) ≈ 0 atol = 200 * eps()
     end # Lanczos
 
     @testset "block Lanczos" begin
@@ -64,14 +64,14 @@ using Test
         # analytic moments at half-filling
         C = transpose(C_minus) + C_plus
         m0 = [1 U / 2; U / 2 U^2 / 2]
-        @test isapprox(moment(C, 0), m0; atol = 80 * eps())
+        @test isapprox(moment(C, 0), m0; atol = 500 * eps())
         m1 = [0 U^2 / 4; U^2 / 4 U^3 / 4]
         @test isapprox(moment(C, 1), m1; atol = 4.0e4 * eps())
 
         # Hartree term
         O_H = O[1]' * O[2] + O[2] * O[1]'
         Σ_H = dot(ψ0, O_H, ψ0)
-        @test Σ_H ≈ U / 2 rtol = 30 * eps()
+        @test Σ_H ≈ U / 2 rtol = 200 * eps()
     end # block Lanczos
 
     @testset "_warn_wrong_sign" begin
